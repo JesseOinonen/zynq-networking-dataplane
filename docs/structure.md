@@ -30,6 +30,7 @@ Control and configuration are performed via AXI-Lite from the PS.
 Each block is independently verifiable and reusable.
 
 Directory Structure
+```console
 fpga/rtl/
 ├── axi/
 ├── parser/
@@ -37,6 +38,7 @@ fpga/rtl/
 ├── observability/
 ├── common/
 └── top/
+```
 
 ## rtl/axi/ – AXI Interfaces and Bus Logic
 
