@@ -1,0 +1,3 @@
+Start with PL and design/verify according to datapath
+
+PS acts as axi transactions to pl, model that to submodules and make common functions for common transfers.
