@@ -1,3 +1,4 @@
 Start with PL and design/verify according to datapath
+> Design & verify AXI module
 
 PS acts as axi transactions to pl, model that to submodules and make common functions for common transfers.

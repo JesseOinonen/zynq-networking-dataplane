@@ -1,3 +1,12 @@
+interface axi_lite_if(input logic clk);
+
+logic [31:0] AWADDR, WDATA, ARADDR, RDATA;
+logic        AWVALID, WVALID, ARVALID, RREADY, BREADY;
+logic        AWREADY, WREADY, ARREADY, RVALID, BVALID;
+logic [3:0]  WSTRB;
+logic [1:0]  BRESP, RRESP;
+logic [2:0]  AWPROT, ARPROT;
+
 task automatic write(input logic [31:0] addr, input logic [31:0] data);
     AWADDR  = addr;
     WDATA   = data;
@@ -26,3 +35,5 @@ task automatic read(input logic [31:0] addr, output logic [31:0] data);
     data = RDATA; 
     RREADY = 0;
 endtask
+
+endinterface

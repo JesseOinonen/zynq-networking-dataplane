@@ -4,8 +4,8 @@ package dataplane_testcase_pkg;
 
     task dataplane_axi4_lite_testcase(input virtual axi_lite_if axi, input logic clk, input logic rst_n);
         logic [31:0] read_data;
-        
-        @(posedge rst_n);
+
+        @(posedge clk);
         $display("Running dataplane_axi4_lite_testcase...");
         @(posedge clk);
         axi.write(32'hffffffff, 32'hAAAAAAAA);

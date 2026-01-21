@@ -1,21 +1,30 @@
-VIVADO  := cmd.exe /c "C:\AMDDesignTools\2025.2\Vivado\bin\vivado.bat" # Adjust path as needed for Vivado
+VIVADO := cmd.exe /c "C:\AMDDesignTools\2025.2\Vivado\bin\vivado.bat"
 PROJECT := dataplane
 BUILD   := build/$(PROJECT)
+XPR     := $(BUILD)/$(PROJECT).xpr
 
 all: sim
 
 $(BUILD):
-	mkdir -p $(BUILD)
+	mkdir $(BUILD)
 
+# Create project only if it does not exist
 project: $(BUILD)
-	cd $(BUILD) && $(VIVADO) -mode batch -source ../../scripts/create_project.tcl
+	if [ ! -f "$(BUILD)/$(PROJECT).xpr" ]; then \
+	    cd $(BUILD) && $(VIVADO) -mode batch -source ../../scripts/create_project.tcl ; \
+	fi
 
+# Run simulation using existing project
 sim: project
 	cd $(BUILD) && $(VIVADO) -mode batch -source ../../scripts/sim.tcl
 
+# GUI open
 gui:
-	cd $(BUILD) && $(VIVADO) $(PROJECT).xpr &
+	if exist "$(XPR)" ( \
+	    cd $(BUILD) && $(VIVADO) $(PROJECT).xpr & \
+	) else (echo "Project does not exist. Run 'make project' first.")
 
+# Simulation then GUI
 sim_gui: project
 	cd $(BUILD) && $(VIVADO) -mode batch -source ../../scripts/sim.tcl && $(VIVADO) $(PROJECT).xpr &
 
