@@ -29,17 +29,21 @@ module axi_lite_slave (
 
 // FSM states
 typedef enum logic [1:0] {IDLE, WRITE, READ, RESP} state_t;
-state_t state_w, next_state_w;
+state_t state_w, next_state_w, state_r, next_state_r;
 
+// State update
 always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         state_w <= IDLE;
+        state_r <= IDLE;
     end
     else begin
         state_w <= next_state_w;
+        state_r <= next_state_r;
     end
 end
 
+// Write FSM
 always_comb begin
     // Default assignments
     AWREADY = 0;
@@ -66,6 +70,12 @@ always_comb begin
             if(BREADY) next_state_w = IDLE;
         end
     endcase
+end
+
+// Read FSM
+always_comb begin
+    // Default assignments
+
 end
 
 endmodule  
