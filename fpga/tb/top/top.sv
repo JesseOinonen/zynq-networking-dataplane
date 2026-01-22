@@ -59,9 +59,11 @@ module top;
         tb_axi.AWPROT  = '0;
         tb_axi.ARPROT  = '0;
 
+        $display("Starting testbench...");
         wait (rst_n == 1);
-        
-        dataplane_axi4_lite_testcase(tb_axi, clk, rst_n);
+        $display("Rst detected...");
+        dataplane_axi4_lite_testcase(tb_axi);
+        $display("Testbench finished.");
         $finish;
     end
     
