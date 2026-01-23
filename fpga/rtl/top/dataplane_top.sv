@@ -1,0 +1,70 @@
+module dataplane_top (
+    input  logic        clk,
+    input  logic        rst_n,
+    input  logic [31:0] AWADDR,  
+    input  logic [ 2:0] AWPROT,  
+    input  logic        AWVALID, 
+    output logic        AWREADY, 
+    input  logic [31:0] WDATA,   
+    input  logic [ 3:0] WSTRB,   
+    input  logic        WVALID,  
+    output logic        WREADY,  
+    input  logic        BREADY,  
+    output logic        BVALID,  
+    output logic [ 1:0] BRESP,   
+    input  logic [31:0] ARADDR,  
+    input  logic [ 2:0] ARPROT,  
+    input  logic        ARVALID, 
+    output logic        ARREADY, 
+    input  logic        RREADY,  
+    output logic        RVALID,  
+    output logic [31:0] RDATA,   
+    output logic [ 1:0] RRESP
+);
+
+    axi_lite_slave u_axi_lite_slave (
+        .clk(clk),
+        .rst_n(rst_n),
+        .AWADDR(AWADDR),  
+        .AWPROT(AWPROT),  
+        .AWVALID(AWVALID), 
+        .AWREADY(AWREADY), 
+        .WDATA(WDATA),   
+        .WSTRB(WSTRB),   
+        .WVALID(WVALID),  
+        .WREADY(WREADY),  
+        .BREADY(BREADY),  
+        .BVALID(BVALID),  
+        .BRESP(BRESP),   
+        .ARADDR(ARADDR),  
+        .ARPROT(ARPROT),  
+        .ARVALID(ARVALID), 
+        .ARREADY(ARREADY), 
+        .RREADY(RREADY),  
+        .RVALID(RVALID),  
+        .RDATA(RDATA),   
+        .RRESP(RRESP),
+        .wdone(wdone), 
+        .rdata(rdata), 
+        .rdone(rdone), 
+        .waddr(waddr), 
+        .wdata(wdata), 
+        .we(we),    
+        .raddr(raddr), 
+        .re(re)     
+    );
+
+    csr u_csr (
+        .clk(clk),
+        .rst_n(rst_n),
+        .waddr(waddr), 
+        .wdata(wdata), 
+        .we(we),    
+        .raddr(raddr), 
+        .re(re),    
+        .rdata(rdata), 
+        .rdone(rdone), 
+        .wdone(wdone)  
+    );
+
+endmodule

@@ -14,7 +14,7 @@ module top;
 
     axi_lite_if tb_axi(clk);
 
-    axi_lite_slave u_axi_lite_slave (
+    dataplane_top u_dataplane_top (
         .clk    (clk),
         .rst_n  (rst_n),
         .AWADDR (tb_axi.AWADDR),
@@ -42,20 +42,13 @@ module top;
         tb_axi.AWADDR  = '0; 
         tb_axi.WDATA   = '0;
         tb_axi.ARADDR  = '0;
-        tb_axi.RDATA   = '0;
         tb_axi.AWVALID = 0;
         tb_axi.WVALID  = 0;
         tb_axi.ARVALID = 0; 
         tb_axi.RREADY  = 0;
         tb_axi.BREADY  = 0;
-        tb_axi.AWREADY = 0; 
-        tb_axi.WREADY  = 0; 
         tb_axi.ARREADY = 0;
-        tb_axi.RVALID  = 0;
-        tb_axi.BVALID  = 0;
         tb_axi.WSTRB   = '0;
-        tb_axi.BRESP   = '0;
-        tb_axi.RRESP   = '0;
         tb_axi.AWPROT  = '0;
         tb_axi.ARPROT  = '0;
 

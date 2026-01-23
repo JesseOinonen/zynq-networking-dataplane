@@ -24,58 +24,104 @@ module axi_lite_slave (
     input  logic        RREADY,  
     output logic        RVALID,  
     output logic [31:0] RDATA,   
-    output logic [ 1:0] RRESP
+    output logic [ 1:0] RRESP,
+    // Signals to register interface
+    input  logic        wdone,  // Write done
+    input  logic [31:0] rdata,  // Read data
+    input  logic        rdone,  // Read done
+    output logic [31:0] waddr,  // Write address
+    output logic [31:0] wdata,  // Write data
+    output logic        we,     // Write enable
+    output logic [31:0] raddr,  // Read address
+    output logic        re      // Read enable
 );
 
-// FSM states
-typedef enum logic [1:0] {IDLE, WRITE, READ, RESP} state_t;
-state_t state_w, next_state_w, state_r, next_state_r;
+logic awaddr_valid;
+logic wdata_valid;
 
-// State update
+// WRITE
 always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-        state_w <= IDLE;
-        state_r <= IDLE;
-    end
+        AWREADY      <= 1'b1;
+        WREADY       <= 1'b1;
+        BVALID       <= 1'b0;
+        BRESP        <= 2'b00;
+        awaddr_valid <= 1'b0;
+        wdata_valid  <= 1'b0;
+        wdata        <= 32'b0;
+        waddr        <= 32'b0;
+        we           <= 1'b0;
+    end 
     else begin
-        state_w <= next_state_w;
-        state_r <= next_state_r;
+
+        // Write address (AW)
+        if (AWVALID && AWREADY) begin
+            waddr <= AWADDR;
+            awaddr_valid <= 1'b1;
+            AWREADY <= 1'b0;
+        end
+
+        // Write data (W)
+        if (WVALID && WREADY) begin
+            wdata <= WDATA;
+            wdata_valid <= 1'b1;
+            WREADY <= 1'b0;
+        end
+
+        // Write response (B)
+        if (wdone && awaddr_valid && wdata_valid) begin
+            BVALID <= 1'b1;
+            BRESP  <= 2'b00; // OKAY response
+            AWREADY <= 1'b1;
+            WREADY  <= 1'b1;
+            we <= 1'b0;
+            awaddr_valid <= 1'b0;
+            wdata_valid <= 1'b0;
+        end
+        if (BVALID && BREADY) begin
+            BVALID <= 1'b0;
+        end
+
+        // Write is ready when both address and data are captured
+        if (awaddr_valid && wdata_valid) begin
+            we <= 1'b1;
+        end
     end
 end
 
-// Write FSM
-always_comb begin
-    // Default assignments
-    AWREADY = 0;
-    WREADY  = 0;
-    BVALID  = 0;
-    BRESP   = 2'b00;
-    next_state_w = state_w;
 
-    case(state_w)
-        IDLE: begin
-            if(AWVALID && WVALID) begin
-                AWREADY = 1;
-                WREADY  = 1;
-                next_state_w = WRITE;
-            end
+// READ
+always_ff @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+        ARREADY <= 1'b1;
+        RVALID  <= 1'b0;
+        BVALID  <= 1'b0;
+        RRESP   <= 2'b00;
+        RDATA   <= 32'b0;
+        re      <= 1'b0;
+        raddr   <= 32'b0;
+    end 
+    else begin
+        // Read address (AR)
+        if (ARVALID && ARREADY) begin
+            raddr   <= ARADDR;
+            ARREADY <= 1'b0;
+            re      <= 1'b1;
         end
-        WRITE: begin
-            // Capture address/data
-            // Move to RESP
-            next_state_w = RESP;
+
+        // Read data (R)
+        if (rdone) begin
+            RDATA  <= rdata;
+            RRESP  <= 2'b00; // OKAY response
+            RVALID <= 1'b1;
+            re     <= 1'b0;
         end
-        RESP: begin
-            BVALID = 1;
-            if(BREADY) next_state_w = IDLE;
+        if (RVALID && RREADY) begin
+            RVALID  <= 1'b0;
+            ARREADY <= 1'b1;
         end
-    endcase
+    end
 end
 
-// Read FSM
-always_comb begin
-    // Default assignments
 
-end
-
-endmodule  
+endmodule

@@ -7,9 +7,11 @@ package dataplane_testcase_pkg;
 
         $display("Running dataplane_axi4_lite_testcase...");
         
-        axi.write(32'hffffffff, 32'hAAAAAAAA);
+        axi.write(32'h4, 32'hAAAAAAAA);
 
-        axi.read(32'hffffffff, read_data);
+        #10ns;
+        
+        axi.read(32'h4, read_data);
         if (read_data !== 32'hAAAAAAAA) begin
             $error("Data mismatch: expected 0xAAAAAAAA, got 0x%08X", read_data);
         end 
