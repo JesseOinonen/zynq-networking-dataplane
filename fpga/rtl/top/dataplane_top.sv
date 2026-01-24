@@ -22,6 +22,15 @@ module dataplane_top (
     output logic [ 1:0] RRESP
 );
 
+logic [31:0] waddr_sig;
+logic [31:0] wdata_sig;
+logic        we_sig;
+logic [31:0] raddr_sig;
+logic        re_sig;
+logic [31:0] rdata_sig;
+logic        rdone_sig;
+logic        wdone_sig;
+
     axi_lite_slave u_axi_lite_slave (
         .clk(clk),
         .rst_n(rst_n),
@@ -44,27 +53,27 @@ module dataplane_top (
         .RVALID(RVALID),  
         .RDATA(RDATA),   
         .RRESP(RRESP),
-        .wdone(wdone), 
-        .rdata(rdata), 
-        .rdone(rdone), 
-        .waddr(waddr), 
-        .wdata(wdata), 
-        .we(we),    
-        .raddr(raddr), 
-        .re(re)     
+        .wdone(wdone_sig), 
+        .rdata(rdata_sig), 
+        .rdone(rdone_sig), 
+        .waddr(waddr_sig), 
+        .wdata(wdata_sig), 
+        .we(we_sig),    
+        .raddr(raddr_sig), 
+        .re(re_sig)     
     );
 
     csr u_csr (
         .clk(clk),
         .rst_n(rst_n),
-        .waddr(waddr), 
-        .wdata(wdata), 
-        .we(we),    
-        .raddr(raddr), 
-        .re(re),    
-        .rdata(rdata), 
-        .rdone(rdone), 
-        .wdone(wdone)  
+        .waddr(waddr_sig), 
+        .wdata(wdata_sig), 
+        .we(we_sig),    
+        .raddr(raddr_sig), 
+        .re(re_sig),    
+        .rdata(rdata_sig), 
+        .rdone(rdone_sig), 
+        .wdone(wdone_sig)  
     );
 
 endmodule
