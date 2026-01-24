@@ -45,8 +45,13 @@ end
 // IPV4 header parsing
 always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-        counter <= '0;
+        counter           <= '0;
         ipv4_parser_ready <= 1'b0;
+        ihl               <= '0;
+        version           <= '0;
+        protocol          <= '0;
+        src_ip            <= '0;
+        dst_ip            <= '0;
     end 
     else begin
         if (data_valid_in && eth_parser_ready && !ipv4_parser_ready) begin

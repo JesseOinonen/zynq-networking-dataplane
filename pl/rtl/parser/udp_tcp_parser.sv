@@ -31,9 +31,22 @@ logic [4:0]  tcp_counter;
 // UPD/TCP header parsing
 always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-        udp_counter <= '0;
-        tcp_counter <= '0;
+        udp_counter          <= '0;
+        tcp_counter          <= '0;
         upd_tcp_parser_ready <= 1'b0;
+        tcp_src_port         <= '0;
+        tcp_dst_port         <= '0;
+        tcp_seq_num          <= '0;
+        tcp_ack_num          <= '0;
+        tcp_data_offset      <= '0;
+        tcp_flags            <= '0;
+        tcp_window_size      <= '0;
+        tcp_checksum         <= '0;
+        tcp_urgent_pointer   <= '0;
+        udp_src_port         <= '0;
+        udp_dst_port         <= '0;
+        udp_length           <= '0;
+        udp_checksum         <= '0;
     end 
     else begin
         if (protocol == 6) begin // TCP

@@ -38,14 +38,17 @@ end
 // Ethernet header parsing
 always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-        counter <= '0;
+        counter          <= '0;
         eth_parser_ready <= 1'b0;
+        dst_mac          <= '0;
+        src_mac          <= '0;
+        eth_type         <= '0;
     end 
     else begin
         if (data_valid_in && !eth_parser_ready) begin
             for (int i = 0; i < idx_in; i++) begin
-                if (counter < 6)       dst_mac[(5 - counter)*8 +: 8] <= tdata_in[i*8 +: 8];
-                else if (counter < 12) src_mac[(11 - counter)*8 +: 8] <= tdata_in[i*8 +: 8];
+                if (counter < 6)       dst_mac[(5 - counter)*8 +: 8]   <= tdata_in[i*8 +: 8];
+                else if (counter < 12) src_mac[(11 - counter)*8 +: 8]  <= tdata_in[i*8 +: 8];
                 else if (counter < 14) eth_type[(13 - counter)*8 +: 8] <= tdata_in[i*8 +: 8];
                 counter++;
             end

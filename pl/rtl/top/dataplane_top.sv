@@ -174,6 +174,7 @@ ipv4_parser #(.DATA_WIDTH(DATA_WIDTH)) u_ipv4_parser (
     .idx_in(idx_eth_sig),
     .tdata_in(tdata_eth_sig),
     .data_valid_in(data_valid_eth_sig),
+    .eth_parser_ready(eth_parser_ready_sig),
     .last_flag_in(last_flag_eth_sig),
     .tdata_out(tdata_ipv4_sig),
     .idx_out(idx_ipv4_sig),
