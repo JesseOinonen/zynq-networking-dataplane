@@ -1,4 +1,6 @@
-import dataplane_testcase_pkg::*;
+// Testcases
+import axi4_lite_testcase_pkg::*;
+import axi_rx_testcase_pkg::*;
 
 module top; 
     logic clk;
@@ -12,9 +14,9 @@ module top;
         .clk(clk)
     );
 
-    axi_lite_if tb_axi(clk);
+    axi_if tb_axi(clk);
 
-    dataplane_top u_dataplane_top (
+    dataplane_top #(.DATA_WIDTH(64)) u_dataplane_top (
         .clk    (clk),
         .rst_n  (rst_n),
         .AWADDR (tb_axi.AWADDR),
@@ -35,7 +37,12 @@ module top;
         .RREADY (tb_axi.RREADY),
         .RVALID (tb_axi.RVALID),
         .RDATA  (tb_axi.RDATA),
-        .RRESP  (tb_axi.RRESP)
+        .RRESP  (tb_axi.RRESP),
+        .tvalid (tb_axi.tvalid),
+        .tdata  (tb_axi.tdata),
+        .tkeep  (tb_axi.tkeep),
+        .tlast  (tb_axi.tlast),
+        .tready (tb_axi.tready)
     );
 
     initial begin
@@ -51,11 +58,16 @@ module top;
         tb_axi.WSTRB   = '0;
         tb_axi.AWPROT  = '0;
         tb_axi.ARPROT  = '0;
+        tb_axi.tvalid  = 1;
+        tb_axi.tdata   = '0;
+        tb_axi.tkeep   = '0;
+        tb_axi.tlast   = 0;
 
         $display("Starting testbench...");
         wait (rst_n == 1);
         $display("Rst detected...");
-        dataplane_axi4_lite_testcase(tb_axi);
+        axi4_lite_testcase(tb_axi);
+        axi_rx_testcase(tb_axi);
         $display("Testbench finished.");
         $finish;
     end
