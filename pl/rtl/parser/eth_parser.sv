@@ -1,0 +1,64 @@
+module eth_parser #(
+    parameter DATA_WIDTH = 64
+)(
+    input  logic                    clk,
+    input  logic                    rst_n,
+    input  logic [$clog2(DATA_WIDTH/8+1)-1:0] idx_in,
+    input  logic [DATA_WIDTH-1:0]   tdata_in,
+    input  logic                    data_valid_in,
+    input  logic                    last_flag_in,
+    output logic [DATA_WIDTH-1:0]   tdata_out,
+    output logic [$clog2(DATA_WIDTH/8+1)-1:0] idx_out,
+    output logic                    data_valid_out,
+    output logic                    last_flag_out,
+    output logic                    eth_parser_ready,
+    output logic [47:0]             dst_mac,
+    output logic [47:0]             src_mac,
+    output logic [15:0]             eth_type
+);
+
+logic [3:0] counter;
+
+// Pass through the data to ipv4 parser
+always_ff @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+        tdata_out      <= '0;
+        idx_out        <= '0;
+        data_valid_out <= 1'b0;
+        last_flag_out  <= 1'b0;
+    end 
+    else begin
+        tdata_out      <= tdata_in;
+        idx_out        <= idx_in;
+        data_valid_out <= data_valid_in;
+        last_flag_out  <= last_flag_in;
+    end
+end
+
+// Ethernet header parsing
+always_ff @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+        counter <= '0;
+        eth_parser_ready <= 1'b0;
+    end 
+    else begin
+        if (data_valid_in && !eth_parser_ready) begin
+            for (int i = 0; i < idx_in; i++) begin
+                if (counter < 6)       dst_mac[(5 - counter)*8 +: 8] <= tdata_in[i*8 +: 8];
+                else if (counter < 12) src_mac[(11 - counter)*8 +: 8] <= tdata_in[i*8 +: 8];
+                else if (counter < 14) eth_type[(13 - counter)*8 +: 8] <= tdata_in[i*8 +: 8];
+                counter++;
+            end
+        end
+        // When 14 bytes have been received ethernet header is complete
+        if (counter >= 14) begin
+            counter <= '0;
+            eth_parser_ready <= 1'b1;
+        end
+        if (last_flag_in) begin
+            eth_parser_ready <= 1'b0;
+        end
+    end
+end
+
+endmodule

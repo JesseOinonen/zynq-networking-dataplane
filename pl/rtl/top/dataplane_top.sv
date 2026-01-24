@@ -39,10 +39,41 @@ logic        re_sig;
 logic [31:0] rdata_sig;
 logic        rdone_sig;
 logic        wdone_sig;
-logic        parser_ready_sig;
+logic        eth_parser_ready_sig;
 logic [$clog2(DATA_WIDTH/8+1)-1:0] idx_sig;
-logic [DATA_WIDTH-1:0]   data_buffer_sig;
+logic [DATA_WIDTH-1:0]   tdata_sig;
 logic                    last_flag_sig;
+logic                    data_valid_sig;
+logic [DATA_WIDTH-1:0]   tdata_eth_sig;
+logic                    data_valid_eth_sig;
+logic [$clog2(DATA_WIDTH/8+1)-1:0] idx_eth_sig;
+logic                    last_flag_eth_sig;
+logic [DATA_WIDTH-1:0]   tdata_ipv4_sig;
+logic                    data_valid_ipv4_sig;
+logic [$clog2(DATA_WIDTH/8+1)-1:0] idx_ipv4_sig;
+logic                    last_flag_ipv4_sig;
+logic [47:0]             dst_mac_sig;
+logic [47:0]             src_mac_sig;
+logic [15:0]             eth_type_sig;
+logic [31:0]             src_ip_sig;
+logic [31:0]             dst_ip_sig;
+logic [7:0]              protocol_sig;
+logic                    ipv4_parser_ready_sig;
+logic                    upd_tcp_parser_ready_sig;
+logic [15:0]             udp_src_port_sig;
+logic [15:0]             udp_dst_port_sig;
+logic [15:0]             udp_length_sig;
+logic [15:0]             udp_checksum_sig;
+logic [15:0]             tcp_src_port_sig;
+logic [15:0]             tcp_dst_port_sig;
+logic [31:0]             tcp_seq_num_sig;
+logic [31:0]             tcp_ack_num_sig;
+logic [3:0]              tcp_data_offset_sig;
+logic [5:0]              tcp_flags_sig;
+logic [15:0]             tcp_window_size_sig;
+logic [15:0]             tcp_checksum_sig;
+logic [15:0]             tcp_urgent_pointer_sig;
+logic [95:0]             flow_key_sig;
 
 axi_lite_slave u_axi_lite_slave (
     .clk(clk),
@@ -83,10 +114,10 @@ axi_rx #(.DATA_WIDTH(DATA_WIDTH)) u_axi_rx (
     .tdata(tdata),
     .tkeep(tkeep),
     .tlast(tlast),
-    .parser_ready(parser_ready_sig),
     .tready(tready),
     .idx(idx_sig),
-    .data_buffer(data_buffer_sig),
+    .tdata_out(tdata_sig),
+    .data_valid(data_valid_sig),
     .last_flag(last_flag_sig)
 );
 
@@ -103,13 +134,80 @@ csr u_csr (
     .wdone(wdone_sig)  
 );
 
-parser u_parser (
+eth_parser #(.DATA_WIDTH(DATA_WIDTH)) u_eth_parser (
     .clk(clk),
     .rst_n(rst_n),
-    .parser_ready(parser_ready_sig),
-    .idx(idx_sig),
-    .data_buffer(data_buffer_sig),
-    .last_flag(last_flag_sig)
+    .idx_in(idx_sig),
+    .tdata_in(tdata_sig),
+    .data_valid_in(data_valid_sig),
+    .last_flag_in(last_flag_sig),
+    .tdata_out(tdata_eth_sig),
+    .idx_out(idx_eth_sig),
+    .data_valid_out(data_valid_eth_sig),
+    .last_flag_out(last_flag_eth_sig),
+    .eth_parser_ready(eth_parser_ready_sig),
+    .dst_mac(dst_mac_sig),
+    .src_mac(src_mac_sig),
+    .eth_type(eth_type_sig)
+);
+
+flow_key_gen #(.DATA_WIDTH(DATA_WIDTH)) u_flow_key_gen (
+    .clk(clk),
+    .rst_n(rst_n),
+    .eth_type(eth_type_sig),
+    .eth_parser_ready(eth_parser_ready_sig),
+    .src_ip(src_ip_sig),
+    .dst_ip(dst_ip_sig),
+    .protocol(protocol_sig),
+    .ipv4_parser_ready(ipv4_parser_ready_sig),
+    .udp_src_port(udp_src_port_sig),
+    .udp_dst_port(udp_dst_port_sig),
+    .tcp_src_port(tcp_src_port_sig),
+    .tcp_dst_port(tcp_dst_port_sig),
+    .upd_tcp_parser_ready(upd_tcp_parser_ready_sig),
+    .flow_key(flow_key_sig)
+);
+
+ipv4_parser #(.DATA_WIDTH(DATA_WIDTH)) u_ipv4_parser (
+    .clk(clk),
+    .rst_n(rst_n),
+    .idx_in(idx_eth_sig),
+    .tdata_in(tdata_eth_sig),
+    .data_valid_in(data_valid_eth_sig),
+    .last_flag_in(last_flag_eth_sig),
+    .tdata_out(tdata_ipv4_sig),
+    .idx_out(idx_ipv4_sig),
+    .data_valid_out(data_valid_ipv4_sig),
+    .last_flag_out(last_flag_ipv4_sig),
+    .ipv4_parser_ready(ipv4_parser_ready_sig),
+    .src_ip(src_ip_sig),
+    .dst_ip(dst_ip_sig),
+    .protocol(protocol_sig)
+);
+
+upd_tcp_parser #(.DATA_WIDTH(DATA_WIDTH)) u_upd_tcp_parser (
+    .clk(clk),
+    .rst_n(rst_n),
+    .idx_in(idx_ipv4_sig),
+    .last_flag_in(last_flag_ipv4_sig),
+    .tdata_in(tdata_ipv4_sig),
+    .data_valid_in(data_valid_ipv4_sig),
+    .ipv4_parser_ready(ipv4_parser_ready_sig),
+    .protocol(protocol_sig),
+    .upd_tcp_parser_ready(upd_tcp_parser_ready_sig),
+    .udp_src_port(udp_src_port_sig),
+    .udp_dst_port(udp_dst_port_sig),
+    .udp_length(udp_length_sig),
+    .udp_checksum(udp_checksum_sig),
+    .tcp_src_port(tcp_src_port_sig),
+    .tcp_dst_port(tcp_dst_port_sig),
+    .tcp_seq_num(tcp_seq_num_sig),
+    .tcp_ack_num(tcp_ack_num_sig),
+    .tcp_data_offset(tcp_data_offset_sig),
+    .tcp_flags(tcp_flags_sig),
+    .tcp_window_size(tcp_window_size_sig),
+    .tcp_checksum(tcp_checksum_sig),
+    .tcp_urgent_pointer(tcp_urgent_pointer_sig)
 );
 
 endmodule
