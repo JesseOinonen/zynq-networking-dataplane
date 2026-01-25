@@ -18,6 +18,7 @@ module eth_parser #(
 );
 
 logic [3:0] counter;
+logic [3:0] wcnt;
 
 // Pass through the data to ipv4 parser
 always_ff @(posedge clk or negedge rst_n) begin
@@ -46,17 +47,21 @@ always_ff @(posedge clk or negedge rst_n) begin
     end 
     else begin
         if (data_valid_in && !eth_parser_ready) begin
+            wcnt = 0;
             for (int i = 0; i < idx_in; i++) begin
-                if (counter < 6)       dst_mac[(5 - counter)*8 +: 8]   <= tdata_in[i*8 +: 8];
-                else if (counter < 12) src_mac[(11 - counter)*8 +: 8]  <= tdata_in[i*8 +: 8];
-                else if (counter < 14) eth_type[(13 - counter)*8 +: 8] <= tdata_in[i*8 +: 8];
-                counter++;
+                if ((counter + wcnt) < 6)       dst_mac[(5 - (counter + wcnt))*8 +: 8]   <= tdata_in[i*8 +: 8];
+                else if ((counter + wcnt) < 12) src_mac[(11 - (counter + wcnt))*8 +: 8]  <= tdata_in[i*8 +: 8];
+                else if ((counter + wcnt) < 14) eth_type[(13 - (counter + wcnt))*8 +: 8] <= tdata_in[i*8 +: 8];
+                wcnt++;
+                // When 14 bytes have been received ethernet header is complete
+                if ((counter + wcnt) >= 14) begin
+                    eth_parser_ready <= 1'b1;
+                    counter = 0;
+                    wcnt = 0;
+                    break;
+                end
             end
-        end
-        // When 14 bytes have been received ethernet header is complete
-        if (counter >= 14) begin
-            counter <= '0;
-            eth_parser_ready <= 1'b1;
+            counter <= counter + wcnt;
         end
         if (last_flag_in) begin
             eth_parser_ready <= 1'b0;

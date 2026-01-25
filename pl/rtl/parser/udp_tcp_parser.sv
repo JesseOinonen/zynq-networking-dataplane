@@ -68,6 +68,11 @@ always_ff @(posedge clk or negedge rst_n) begin
                         default: ;
                     endcase
                     tcp_counter++;
+                    if (tcp_counter >= 20) begin
+                        tcp_counter <= '0;
+                        upd_tcp_parser_ready <= 1'b1;
+                        break;
+                    end
                 end
             end
         end
@@ -82,13 +87,13 @@ always_ff @(posedge clk or negedge rst_n) begin
                         default: ;
                     endcase
                     udp_counter++;
+                    if (udp_counter >= 8) begin
+                        udp_counter <= '0;
+                        upd_tcp_parser_ready <= 1'b1;
+                        break;
+                    end
                 end
             end
-        end
-        if ((protocol == 6 && tcp_counter >= 20) || (protocol == 17 && udp_counter >= 8)) begin
-            udp_counter <= '0;
-            tcp_counter <= '0;
-            upd_tcp_parser_ready <= 1'b1;
         end
         if (last_flag_in) begin
             upd_tcp_parser_ready <= 1'b0;

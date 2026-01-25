@@ -66,12 +66,13 @@ always_ff @(posedge clk or negedge rst_n) begin
                     16,17,18,19: dst_ip[(19-counter)*8 +: 8] <= tdata_in[i*8 +: 8];
                 endcase
                 counter++;
+                // When ipv4_header_length bytes have been received IPV4 header is complete
+                if (counter >= ipv4_header_length ) begin
+                    ipv4_parser_ready <= 1'b1;
+                    counter <= '0;
+                    break;
+                end
             end
-        end
-        // When ipv4_header_length bytes have been received IPV4 header is complete
-        if (counter >= ipv4_header_length) begin
-            counter <= '0;
-            ipv4_parser_ready <= 1'b1;
         end
         if (!eth_parser_ready) begin
             ipv4_parser_ready <= 1'b0;
