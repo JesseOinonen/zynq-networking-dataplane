@@ -1,7 +1,7 @@
 package axi_rx_testcase_pkg;
     `include "../top/register.svh"
 
-    task axi_rx_testcase(input virtual axi_if axi, input logic [47:0] dst_mac, input  logic [47:0] src_mac, input logic [15:0] eth_type);
+    task axi_rx_testcase(input virtual axi_if axi);
         
         $display("Running axi_rx_testcase...");
         // Ethernet Frame:
@@ -22,25 +22,23 @@ package axi_rx_testcase_pkg;
             // Ack: 00 00 00 00
             // Flags: SYN (50 02)
             // Window Size: 7210 (72 10)
-        axi.stream_send(64'hDA02030405065A02, 8'hFF, 0);
-        axi.stream_send(64'h0304050608004500, 8'hFF, 0);
-        axi.stream_send(64'h0028123440004006, 8'hFF, 0);
-        axi.stream_send(64'h0000C0A80101C0A8, 8'hFF, 0);
-        axi.stream_send(64'h010204D200500000, 8'hFF, 0);
-        axi.stream_send(64'h0001000000005002, 8'hFF, 0);
-        axi.stream_send(64'h7210000000000000, 8'b1111_1100, 1);
+        axi.stream_send(64'h025A0605040302DA, 8'hFF, 0);
+        axi.stream_send(64'h0045000806050403, 8'hFF, 0);
+        axi.stream_send(64'h0640004012342800, 8'hFF, 0);
+        axi.stream_send(64'hA8C00101A8C00000, 8'hFF, 0);
+        axi.stream_send(64'h00005000D2040201, 8'hFF, 0);
+        axi.stream_send(64'h0250000000000100, 8'hFF, 0);
+        axi.stream_send(64'h0000000000001072, 8'b0011_1111, 1);
+
         #10ns;
+
+        // Read from CSR to verify packet reception
+        logic [31:0] read_data;
+        axi.read(`CSR_DST_MAC, read_data);
+        if (read_data !== 32'hDA0203040506) $error("DST MAC mismatch: expected DA:02:03:04:05:06, got 0x%08X", read_data);
+        axi.read(`CSR_SRC_MAC, read_data);
+        if (read_data !== 32'h5A0203040506) $error("SRC MAC mismatch: expected 5A:02:03:04:05:06, got 0x%08X", read_data);
         
-        if (dst_mac !== 48'hDA_02_03_04_05_06) begin
-            $error("AXI RX Testcase Failed: Incorrect Destination MAC Address. Expected: %h, Received: %h", 48'hDA_02_03_04_05_06, dst_mac);
-        end
-        if (src_mac !== 48'h5A_02_03_04_05_06) begin
-            $error("AXI RX Testcase Failed: Incorrect Source MAC Address. Expected: %h, Received: %h", 48'h5A_02_03_04_05_06, src_mac);
-        end
-        if (eth_type !== 16'h0800) begin
-            $error("AXI RX Testcase Failed: Incorrect Ethertype. Expected: %h, Received: %h", 16'h0800, eth_type);
-        end
-        $display("Completed axi_rx_testcase.");
     endtask
 
 endpackage

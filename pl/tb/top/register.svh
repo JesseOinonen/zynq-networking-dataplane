@@ -1,1 +1,3 @@
-`define CSR_REGS    32'h1000_0000
+`define CSR_DST_MAC    32'h0000_0004 //RO
+`define CSR_SRC_MAC    32'h0000_000C //RO
+`define CSR_ETH_TYPE   32'h0000_0014 //RO

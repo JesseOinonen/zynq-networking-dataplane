@@ -5,13 +5,6 @@ import axi_rx_testcase_pkg::*;
 module top; 
     logic clk;
     logic rst_n;
-    logic [47:0] dst_mac;
-    logic [47:0] src_mac;
-    logic [15:0] eth_type;
-
-    assign dst_mac  = top.u_dataplane_top.u_eth_parser.dst_mac;
-    assign src_mac  = top.u_dataplane_top.u_eth_parser.src_mac;
-    assign eth_type = top.u_dataplane_top.u_eth_parser.eth_type;
 
     rst_gen u_rst_gen (
         .rst_n(rst_n)
@@ -74,7 +67,7 @@ module top;
         wait (rst_n == 1);
         $display("Rst detected...");
         axi4_lite_testcase(tb_axi);
-        axi_rx_testcase(tb_axi, dst_mac, src_mac, eth_type);
+        axi_rx_testcase(tb_axi);
         $display("Testbench finished.");
         $finish;
     end
