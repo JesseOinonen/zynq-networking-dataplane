@@ -6,6 +6,7 @@ create_project $proj_name $build_dir -part xc7z010clg400-1 -force
 add_files [glob ../../../pl/rtl/axi/*.sv]
 add_files [glob ../../../pl/rtl/parser/*.sv]
 add_files [glob ../../../pl/rtl/csr.sv]
+add_files [glob ../../../pl/rtl/dataplane_pkg.sv]
 add_files [glob ../../../pl/rtl/top/dataplane_top.sv]
 add_files [glob ../../../pl/rtl/match_action/flow_key_gen.sv]
 #add_files [glob ../../../pl/rtl/observability/*.sv]

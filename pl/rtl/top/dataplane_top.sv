@@ -129,6 +129,10 @@ csr u_csr (
     .we(we_sig),    
     .raddr(raddr_sig), 
     .re(re_sig),    
+    .dst_mac(dst_mac_sig), 
+    .src_mac(src_mac_sig), 
+    .eth_type(eth_type_sig),
+    .eth_ready(eth_parser_ready_sig),
     .rdata(rdata_sig), 
     .rdone(rdone_sig), 
     .wdone(wdone_sig)  

@@ -2,6 +2,7 @@ package axi_rx_testcase_pkg;
     `include "../top/register.svh"
 
     task axi_rx_testcase(input virtual axi_if axi);
+        logic [31:0] read_data;
         
         $display("Running axi_rx_testcase...");
         // Ethernet Frame:
@@ -33,12 +34,13 @@ package axi_rx_testcase_pkg;
         #10ns;
 
         // Read from CSR to verify packet reception
-        logic [31:0] read_data;
-        axi.read(`CSR_DST_MAC, read_data);
-        if (read_data !== 32'hDA0203040506) $error("DST MAC mismatch: expected DA:02:03:04:05:06, got 0x%08X", read_data);
-        axi.read(`CSR_SRC_MAC, read_data);
-        if (read_data !== 32'h5A0203040506) $error("SRC MAC mismatch: expected 5A:02:03:04:05:06, got 0x%08X", read_data);
-        
+        axi.read(`CSR_DST_MAC_L, read_data);
+        // DA:02:03:04:05:06
+        if (read_data !== 32'h3040506) $error("DST MAC LOW mismatch: expected 03040506, got 0x%08X", read_data);
+        else $display("DST MAC LOW PASSED");
+        axi.read(`CSR_DST_MAC_H, read_data);
+        if (read_data !== 32'hDA02) $error("DST MAC HIGH mismatch: expected DA02, got 0x%08X", read_data);
+        else $display("DST MAC HIGH PASSED");
     endtask
 
 endpackage

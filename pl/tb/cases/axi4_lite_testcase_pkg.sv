@@ -7,11 +7,11 @@ package axi4_lite_testcase_pkg;
 
         $display("Running axi4_lite_testcase...");
         
-        axi.write(32'h4, 32'hAAAAAAAA);
+        axi.write(`CSR_CTRL, 32'hAAAAAAAA);
 
         #10ns;
         
-        axi.read(32'h4, read_data);
+        axi.read(`CSR_CTRL, read_data);
         if (read_data !== 32'hAAAAAAAA) begin
             $error("Data mismatch: expected 0xAAAAAAAA, got 0x%08X", read_data);
         end 
