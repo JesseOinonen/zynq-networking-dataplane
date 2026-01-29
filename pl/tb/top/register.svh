@@ -9,4 +9,6 @@
 `define CSR_ETH_TYPE       6'h18
 `define CSR_SRC_IP         6'h1C
 `define CSR_DST_IP         6'h20
-`define CSR_SRC_PORT_DST   6'h24
+`define CSR_PROTOCOL       6'h24
+`define CSR_UDP_PORT       6'h28  // [31:16] src port, [15:0] dst port
+`define CSR_TCP_PORT       6'h2C  // [31:16] src port, [15:0] dst port

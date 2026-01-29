@@ -35,12 +35,44 @@ package axi_rx_testcase_pkg;
 
         // Read from CSR to verify packet reception
         axi.read(`CSR_DST_MAC_L, read_data);
-        // DA:02:03:04:05:06
         if (read_data !== 32'h3040506) $error("DST MAC LOW mismatch: expected 03040506, got 0x%08X", read_data);
         else $display("DST MAC LOW PASSED");
+
         axi.read(`CSR_DST_MAC_H, read_data);
         if (read_data !== 32'hDA02) $error("DST MAC HIGH mismatch: expected DA02, got 0x%08X", read_data);
         else $display("DST MAC HIGH PASSED");
+
+        axi.read(`CSR_SRC_MAC_L, read_data);
+        if (read_data !== 32'h3040506) $error("SRC MAC LOW mismatch: expected 03040506, got 0x%08X", read_data);
+        else $display("SRC MAC LOW PASSED");
+
+        axi.read(`CSR_SRC_MAC_H, read_data);
+        if (read_data !== 32'h5A02) $error("SRC MAC HIGH mismatch: expected 5A02, got 0x%08X", read_data);
+        else $display("SRC MAC HIGH PASSED");
+
+        axi.read(`CSR_ETH_TYPE, read_data);
+        if (read_data !== 32'h0800) $error("ETH TYPE mismatch: expected 0800, got 0x%08X", read_data);
+        else $display("ETH TYPE PASSED");
+
+        axi.read(`CSR_SRC_IP, read_data);
+        if (read_data !== 32'hC0A80101) $error("SRC IP mismatch: expected C0A80101, got 0x%08X", read_data);
+        else $display("SRC IP PASSED");
+
+        axi.read(`CSR_DST_IP, read_data);
+        if (read_data !== 32'hC0A80102) $error("DST IP mismatch: expected C0A80102, got 0x%08X", read_data);
+        else $display("DST IP PASSED");
+
+        axi.read(`CSR_PROTOCOL, read_data);
+        if (read_data !== 32'h000006) $error("PROTOCOL mismatch: expected 06, got 0x%08X", read_data);
+        else $display("PROTOCOL PASSED");
+
+        axi.read(`CSR_TCP_PORT, read_data);
+        if (read_data[31:16] !== 16'h04D2) $error("TCP SOURCE PORT mismatch: expected 04D2, got 0x%08X", read_data);
+        else $display("TCP SRC PORT PASSED");
+        if (read_data[15:0] !== 16'h0050) $error("TCP DESTINATION PORT mismatch: expected 0050, got 0x%08X", read_data);
+        else $display("TCP DST PORT PASSED");
+
+        #10ns;
     endtask
 
 endpackage

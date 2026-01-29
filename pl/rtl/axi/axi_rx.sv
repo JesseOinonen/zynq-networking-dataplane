@@ -15,7 +15,6 @@ module axi_rx #(
 );
 
 assign tready = 1'b1;
-assign last_flag = tlast;
 logic [$clog2(DATA_WIDTH/8+1)-1:0] widx;
 
 // Data reception logic
@@ -24,8 +23,10 @@ always_ff @(posedge clk or negedge rst_n) begin
         tdata_out <= '0;
         idx <= '0;
         data_valid <= 1'b0;
+        last_flag  <= 1'b0;
     end 
     else begin
+        last_flag <= tlast;
         data_valid <= 1'b0;
         if (tvalid && tready) begin
             widx = 0;

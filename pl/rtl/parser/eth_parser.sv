@@ -14,11 +14,31 @@ module eth_parser #(
     output logic                    eth_parser_ready,
     output logic [47:0]             dst_mac,
     output logic [47:0]             src_mac,
-    output logic [15:0]             eth_type
+    output logic [15:0]             eth_type,
+    output logic [ 3:0]             wcnt_eth
 );
 
 logic [3:0] counter;
 logic [3:0] wcnt;
+logic       sop;
+logic       in_packet;
+
+// Packet state tracking
+always_ff @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+        in_packet <= 1'b0;
+    end
+    else if (data_valid_in) begin
+        if (last_flag_in)
+            in_packet <= 1'b0;   // end of packet
+        else
+            in_packet <= 1'b1;   // inside packet
+    end
+end
+
+// SOP = first valid beat when not already in packet
+assign sop = data_valid_in && !in_packet;
+
 
 // Pass through the data to ipv4 parser
 always_ff @(posedge clk or negedge rst_n) begin
@@ -44,8 +64,10 @@ always_ff @(posedge clk or negedge rst_n) begin
         dst_mac          <= '0;
         src_mac          <= '0;
         eth_type         <= '0;
+        wcnt_eth         <= '0;
     end 
     else begin
+        wcnt_eth <= '0;
         if (data_valid_in && !eth_parser_ready) begin
             wcnt = 0;
             for (int i = 0; i < idx_in; i++) begin
@@ -56,14 +78,15 @@ always_ff @(posedge clk or negedge rst_n) begin
                 // When 14 bytes have been received ethernet header is complete
                 if ((counter + wcnt) >= 14) begin
                     eth_parser_ready <= 1'b1;
-                    counter = 0;
+                    wcnt_eth <= wcnt;
+                    counter <= '0;
                     wcnt = 0;
                     break;
                 end
             end
             counter <= counter + wcnt;
         end
-        if (last_flag_in) begin
+        if (sop) begin
             eth_parser_ready <= 1'b0;
         end
     end

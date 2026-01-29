@@ -9,5 +9,7 @@ package dataplane_pkg;
     `define ETH_TYPE       4'h6   // 0x18
     `define SRC_IP         4'h7   // 0x1C
     `define DST_IP         4'h8   // 0x20
-    `define SRC_PORT_DST   4'h9   // 0x24
+    `define PROTOCOL       4'h9   // 0x24
+    `define UDP_PORT       4'ha   // 0x28 [31:16] src port, [15:0] dst port
+    `define TCP_PORT       4'hb   // 0x2C [31:16] src port, [15:0] dst port
 endpackage
