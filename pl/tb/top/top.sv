@@ -5,6 +5,8 @@ import axi_rx_testcase_pkg::*;
 module top; 
     logic clk;
     logic rst_n;
+    int   passed;
+    int   total;
 
     rst_gen u_rst_gen (
         .rst_n(rst_n)
@@ -66,9 +68,9 @@ module top;
         $display("Starting testbench...");
         wait (rst_n == 1);
         $display("Rst detected...");
-        axi4_lite_testcase(tb_axi);
-        axi_rx_testcase(tb_axi);
-        $display("Testbench finished.");
+        axi4_lite_testcase(tb_axi, passed, total);
+        axi_rx_testcase(tb_axi, passed, total);
+        $display("Testbench finished. %0d / %0d PASSED", passed, total);
         $finish;
     end
     

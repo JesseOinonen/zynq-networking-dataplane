@@ -2,7 +2,7 @@
 package axi4_lite_testcase_pkg;
     `include "../top/register.svh"
 
-    task axi4_lite_testcase(input virtual axi_if axi);
+    task axi4_lite_testcase(input virtual axi_if axi, output int passed, output int total);
         logic [31:0] read_data;
 
         $display("Running axi4_lite_testcase...");
@@ -17,7 +17,9 @@ package axi4_lite_testcase_pkg;
         end 
         else begin
             $display("Data match successful: 0x%08X", read_data);
+            passed++;
         end
+        total++;
         $display("Completed axi4_lite_testcase.");
     endtask
 
