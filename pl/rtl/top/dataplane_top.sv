@@ -73,9 +73,10 @@ logic [5:0]              tcp_flags_sig;
 logic [15:0]             tcp_window_size_sig;
 logic [15:0]             tcp_checksum_sig;
 logic [15:0]             tcp_urgent_pointer_sig;
-logic [95:0]             flow_key_sig;
+logic [127:0]            flow_key_sig;
 logic [3:0]              wcnt_eth_sig;
 logic [4:0]              wcnt_ipv4_sig;
+logic                    valid_flow_key_sig;
 
 axi_lite_slave u_axi_lite_slave (
     .clk(clk),
@@ -144,6 +145,8 @@ csr u_csr (
     .udp_dst_port(udp_dst_port_sig),
     .tcp_src_port(tcp_src_port_sig),
     .tcp_dst_port(tcp_dst_port_sig),
+    .flow_key(flow_key_sig),
+    .flow_key_valid(valid_flow_key_sig),
     .rdata(rdata_sig), 
     .rdone(rdone_sig), 
     .wdone(wdone_sig)  
@@ -181,7 +184,17 @@ flow_key_gen #(.DATA_WIDTH(DATA_WIDTH)) u_flow_key_gen (
     .tcp_src_port(tcp_src_port_sig),
     .tcp_dst_port(tcp_dst_port_sig),
     .upd_tcp_parser_ready(upd_tcp_parser_ready_sig),
-    .flow_key(flow_key_sig)
+    .flow_key(flow_key_sig),
+    .valid_flow_key(valid_flow_key_sig)
+);
+
+flow_table u_flow_table (
+    .clk(clk),
+    .rst_n(rst_n),
+    .flow_key(flow_key_sig),
+    .flow_key_valid(valid_flow_key_sig),
+    .flow_hit(),
+    .flow_id()
 );
 
 ipv4_parser #(.DATA_WIDTH(DATA_WIDTH)) u_ipv4_parser (

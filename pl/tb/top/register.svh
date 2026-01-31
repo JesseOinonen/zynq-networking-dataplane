@@ -12,3 +12,7 @@
 `define CSR_PROTOCOL       6'h24
 `define CSR_UDP_PORT       6'h28  // [31:16] src port, [15:0] dst port
 `define CSR_TCP_PORT       6'h2C  // [31:16] src port, [15:0] dst port
+`define CSR_FLOW_KEY_32    6'h30  // flow_key [31:0]
+`define CSR_FLOW_KEY_64    6'h34  // flow_key [63:32]
+`define CSR_FLOW_KEY_96    6'h38  // flow_key [95:64]
+`define CSR_FLOW_KEY_128   6'h3C  // flow_key [127:96]

@@ -1,29 +1,31 @@
 import dataplane_pkg::*;
 
 module csr (
-    input  logic        clk,
-    input  logic        rst_n,
-    input  logic [31:0] waddr,      // Write address
-    input  logic [31:0] wdata,      // Write data
-    input  logic        we,         // Write enable
-    input  logic [31:0] raddr,      // Read address
-    input  logic        re,         // Read enable
-    input  logic [47:0] dst_mac,    // Destination MAC from parser
-    input  logic [47:0] src_mac,    // Source MAC from parser
-    input  logic [15:0] eth_type,   // Ethertype from parser
-    input  logic        eth_ready,  // Indicates new Ethernet frame parsed
-    input  logic        ipv4_ready, // Indicates new IPv4 header parsed
-    input  logic [31:0] src_ip,     // Source IP from parser
-    input  logic [31:0] dst_ip,     // Destination IP from parser
-    input  logic [7:0]  protocol,   // Protocol from parser
-    input  logic        udp_tcp_ready,
-    input  logic [15:0] udp_src_port,
-    input  logic [15:0] udp_dst_port,
-    input  logic [15:0] tcp_src_port,
-    input  logic [15:0] tcp_dst_port,
-    output logic [31:0] rdata,      // Read data
-    output logic        rdone,      // Read done
-    output logic        wdone       // Write done
+    input  logic         clk,
+    input  logic         rst_n,
+    input  logic [31:0]  waddr,      // Write address
+    input  logic [31:0]  wdata,      // Write data
+    input  logic         we,         // Write enable
+    input  logic [31:0]  raddr,      // Read address
+    input  logic         re,         // Read enable
+    input  logic [47:0]  dst_mac,    // Destination MAC from parser
+    input  logic [47:0]  src_mac,    // Source MAC from parser
+    input  logic [15:0]  eth_type,   // Ethertype from parser
+    input  logic         eth_ready,  // Indicates new Ethernet frame parsed
+    input  logic         ipv4_ready, // Indicates new IPv4 header parsed
+    input  logic [31:0]  src_ip,     // Source IP from parser
+    input  logic [31:0]  dst_ip,     // Destination IP from parser
+    input  logic [7:0]   protocol,   // Protocol from parser
+    input  logic         udp_tcp_ready,
+    input  logic [15:0]  udp_src_port,
+    input  logic [15:0]  udp_dst_port,
+    input  logic [15:0]  tcp_src_port,
+    input  logic [15:0]  tcp_dst_port,
+    input  logic [127:0] flow_key,
+    input  logic         flow_key_valid,
+    output logic [31:0]  rdata,      // Read data
+    output logic         rdone,      // Read done
+    output logic         wdone       // Write done
 );
 
 logic [31:0] register_file [0:15];
@@ -41,20 +43,29 @@ always_ff @(posedge clk or negedge rst_n) begin
         wdone <= 1'b0;
         // READ-ONLY status from parser
         if (eth_ready) begin
-            register_file[`DST_MAC_L] <= dst_mac[31:0];
-            register_file[`DST_MAC_H] <= {16'b0, dst_mac[47:32]};
-            register_file[`SRC_MAC_L] <= src_mac[31:0];
-            register_file[`SRC_MAC_H] <= {16'b0, src_mac[47:32]};
-            register_file[`ETH_TYPE]  <= {16'b0, eth_type};
+            register_file[`DST_MAC_L]   <= dst_mac[31:0];
+            register_file[`DST_MAC_H]   <= {16'b0, dst_mac[47:32]};
+            register_file[`SRC_MAC_L]   <= src_mac[31:0];
+            register_file[`SRC_MAC_H]   <= {16'b0, src_mac[47:32]};
+            register_file[`ETH_TYPE]    <= {16'b0, eth_type};
         end
+
         if (ipv4_ready) begin
-            register_file[`SRC_IP]    <= src_ip;
-            register_file[`DST_IP]    <= dst_ip;
-            register_file[`PROTOCOL]  <= {16'b0, protocol};
+            register_file[`SRC_IP]      <= src_ip;
+            register_file[`DST_IP]      <= dst_ip;
+            register_file[`PROTOCOL]    <= {16'b0, protocol};
         end
+
         if (udp_tcp_ready) begin
-            register_file[`UDP_PORT]  <= {udp_src_port[15:0], udp_dst_port[15:0]};
-            register_file[`TCP_PORT]  <= {tcp_src_port[15:0], tcp_dst_port[15:0]};
+            register_file[`UDP_PORT]    <= {udp_src_port[15:0], udp_dst_port[15:0]};
+            register_file[`TCP_PORT]    <= {tcp_src_port[15:0], tcp_dst_port[15:0]};
+        end
+
+        if (flow_key_valid) begin
+            register_file[`FLOW_KEY_32]  <= flow_key[31:0];
+            register_file[`FLOW_KEY_64]  <= flow_key[63:32];
+            register_file[`FLOW_KEY_96]  <= flow_key[95:64];
+            register_file[`FLOW_KEY_128] <= flow_key[127:96];
         end
 
         // Write control register
@@ -90,7 +101,11 @@ always_ff @(posedge clk or negedge rst_n) begin
                 `DST_IP,
                 `PROTOCOL,
                 `UDP_PORT,
-                `TCP_PORT:
+                `TCP_PORT,
+                `FLOW_KEY_32,
+                `FLOW_KEY_64,
+                `FLOW_KEY_96,
+                `FLOW_KEY_128:
                     rdata <= register_file[raddr[5:2]];
                 default:
                     rdata <= 32'hDEADBEEF;

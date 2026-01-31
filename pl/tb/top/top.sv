@@ -1,12 +1,13 @@
 // Testcases
 import axi4_lite_testcase_pkg::*;
 import axi_rx_testcase_pkg::*;
+import flow_key_gen_testcase_pkg::*;
 
 module top; 
     logic clk;
     logic rst_n;
-    int   passed;
-    int   total;
+    int   passed1, passed2, passed3, passed;
+    int   total1, total2, total3, total;
 
     rst_gen u_rst_gen (
         .rst_n(rst_n)
@@ -68,8 +69,15 @@ module top;
         $display("Starting testbench...");
         wait (rst_n == 1);
         $display("Rst detected...");
-        axi4_lite_testcase(tb_axi, passed, total);
-        axi_rx_testcase(tb_axi, passed, total);
+        axi4_lite_testcase(tb_axi, passed1, total1);
+        total += total1;
+        passed += passed1;
+        axi_rx_testcase(tb_axi, passed2, total2);
+        total += total2;
+        passed += passed2;
+        flow_key_gen_testcase(tb_axi, passed3, total3);
+        total += total3;
+        passed += passed3;
         $display("Testbench finished. %0d / %0d PASSED", passed, total);
         $finish;
     end

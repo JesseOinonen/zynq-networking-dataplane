@@ -1,4 +1,3 @@
-
 package axi4_lite_testcase_pkg;
     `include "../top/register.svh"
 
