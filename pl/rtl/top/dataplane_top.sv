@@ -39,6 +39,18 @@ logic        re_sig;
 logic [31:0] rdata_sig;
 logic        rdone_sig;
 logic        wdone_sig;
+logic [31:0] waddr_csr_sig;
+logic [31:0] wdata_csr_sig;
+logic        we_csr_sig;
+logic [31:0] raddr_csr_sig;
+logic        re_csr_sig;
+logic [31:0] rdata_csr_sig;
+logic        rdone_csr_sig;
+logic        wdone_csr_sig;
+logic        wdone_flow_sig;
+logic [7:0]  waddr_flow_sig;
+logic [31:0] wdata_flow_sig;
+logic        we_flow_sig;
 logic        eth_parser_ready_sig;
 logic [$clog2(DATA_WIDTH/8+1)-1:0] idx_sig;
 logic [DATA_WIDTH-1:0]   tdata_sig;
@@ -77,6 +89,31 @@ logic [127:0]            flow_key_sig;
 logic [3:0]              wcnt_eth_sig;
 logic [4:0]              wcnt_ipv4_sig;
 logic                    valid_flow_key_sig;
+logic                    flow_hit_sig;
+logic [15:0]             flow_id_sig;
+
+axi_addr_decode u_axi_addr_decode (
+    .waddr(waddr_sig),
+    .wdata(wdata_sig),
+    .we(we_sig),
+    .wdone_flow(wdone_flow_sig),
+    .wdone_csr(wdone_csr_sig),
+    .rdone_csr(rdone_csr_sig),
+    .rdata_csr(rdata_csr_sig),
+    .raddr(raddr_sig),
+    .re(re_sig),
+    .re_csr(re_csr_sig),
+    .we_csr(we_csr_sig),
+    .waddr_csr(waddr_csr_sig),
+    .wdata_csr(wdata_csr_sig),
+    .raddr_csr(raddr_csr_sig),
+    .we_flow(we_flow_sig),
+    .waddr_flow(waddr_flow_sig),
+    .wdata_flow(wdata_flow_sig),
+    .wdone(wdone_sig),
+    .rdone(rdone_sig),
+    .rdata(rdata_sig)
+);
 
 axi_lite_slave u_axi_lite_slave (
     .clk(clk),
@@ -127,11 +164,11 @@ axi_rx #(.DATA_WIDTH(DATA_WIDTH)) u_axi_rx (
 csr u_csr (
     .clk(clk),
     .rst_n(rst_n),
-    .waddr(waddr_sig), 
-    .wdata(wdata_sig), 
-    .we(we_sig),    
-    .raddr(raddr_sig), 
-    .re(re_sig),    
+    .waddr(waddr_csr_sig), 
+    .wdata(wdata_csr_sig), 
+    .we(we_csr_sig),    
+    .raddr(raddr_csr_sig), 
+    .re(re_csr_sig),    
     .dst_mac(dst_mac_sig), 
     .src_mac(src_mac_sig), 
     .eth_type(eth_type_sig),
@@ -147,9 +184,9 @@ csr u_csr (
     .tcp_dst_port(tcp_dst_port_sig),
     .flow_key(flow_key_sig),
     .flow_key_valid(valid_flow_key_sig),
-    .rdata(rdata_sig), 
-    .rdone(rdone_sig), 
-    .wdone(wdone_sig)  
+    .rdata(rdata_csr_sig), 
+    .rdone(rdone_csr_sig), 
+    .wdone(wdone_csr_sig)  
 );
 
 eth_parser #(.DATA_WIDTH(DATA_WIDTH)) u_eth_parser (
@@ -193,8 +230,12 @@ flow_table u_flow_table (
     .rst_n(rst_n),
     .flow_key(flow_key_sig),
     .flow_key_valid(valid_flow_key_sig),
-    .flow_hit(),
-    .flow_id()
+    .waddr(waddr_flow_sig),
+    .wdata(wdata_flow_sig),
+    .we(we_flow_sig),
+    .flow_hit(flow_hit_sig),
+    .flow_id(flow_id_sig),
+    .wdone(wdone_flow_sig)
 );
 
 ipv4_parser #(.DATA_WIDTH(DATA_WIDTH)) u_ipv4_parser (

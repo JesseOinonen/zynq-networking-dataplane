@@ -48,6 +48,12 @@ package flow_key_gen_testcase_pkg;
         end
         total++;
 
+        // Write hash(flow_key) BRAM to test flow_table
+        axi.write(32'h8000A00C, 32'hFFFFFFFF);
+        axi.write(32'h8000A00C, 32'hFFFFFFFF);
+        axi.write(32'h8000A00C, 32'hFFFFFFFF);
+        axi.write(32'h8000A00C, 32'hFFFFFFFF);
+
         $display("Completed flow_key_gen_testcase.");
     endtask
 
