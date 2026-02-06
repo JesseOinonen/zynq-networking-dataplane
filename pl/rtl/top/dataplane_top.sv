@@ -51,6 +51,10 @@ logic        wdone_flow_sig;
 logic [7:0]  waddr_flow_sig;
 logic [31:0] wdata_flow_sig;
 logic        we_flow_sig;
+logic        wdone_act_sig;
+logic [15:0] waddr_act_sig;
+logic [31:0] wdata_act_sig;
+logic        we_act_sig;
 logic        eth_parser_ready_sig;
 logic [$clog2(DATA_WIDTH/8+1)-1:0] idx_sig;
 logic [DATA_WIDTH-1:0]   tdata_sig;
@@ -92,12 +96,24 @@ logic                    valid_flow_key_sig;
 logic                    flow_hit_sig;
 logic [15:0]             flow_id_sig;
 
+action_stage u_action_stage (
+    .clk(clk),
+    .rst_n(rst_n),
+    .flow_hit(flow_hit_sig),
+    .flow_id(flow_id_sig),
+    .waddr(waddr_act_sig),
+    .wdata(wdata_act_sig),
+    .we(we_act_sig),
+    .wdone(wdone_act_sig)
+);
+
 axi_addr_decode u_axi_addr_decode (
     .waddr(waddr_sig),
     .wdata(wdata_sig),
     .we(we_sig),
     .wdone_flow(wdone_flow_sig),
     .wdone_csr(wdone_csr_sig),
+    .wdone_act(wdone_act_sig),
     .rdone_csr(rdone_csr_sig),
     .rdata_csr(rdata_csr_sig),
     .raddr(raddr_sig),
@@ -110,6 +126,9 @@ axi_addr_decode u_axi_addr_decode (
     .we_flow(we_flow_sig),
     .waddr_flow(waddr_flow_sig),
     .wdata_flow(wdata_flow_sig),
+    .we_act(we_act_sig),
+    .waddr_act(waddr_act_sig),
+    .wdata_act(wdata_act),
     .wdone(wdone_sig),
     .rdone(rdone_sig),
     .rdata(rdata_sig)
@@ -207,7 +226,7 @@ eth_parser #(.DATA_WIDTH(DATA_WIDTH)) u_eth_parser (
     .wcnt_eth(wcnt_eth_sig)
 );
 
-flow_key_gen #(.DATA_WIDTH(DATA_WIDTH)) u_flow_key_gen (
+flow_key_gen u_flow_key_gen (
     .clk(clk),
     .rst_n(rst_n),
     .eth_type(eth_type_sig),

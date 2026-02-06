@@ -52,7 +52,7 @@ always_ff @(posedge clk) begin
 end
 
 // Write flow_table from PS (AXI4-lite, 32bits at a time)
-// Need to capture latest wr_cnt to register and use its value
+// Need to capture latest wr_cnt to register and use its value !!!!!!
 always_ff @(posedge clk) begin
     wdone <= 1'b0;
     if (we) begin

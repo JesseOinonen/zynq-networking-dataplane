@@ -71,7 +71,7 @@ always_ff @(posedge clk or negedge rst_n) begin
         // Write control register
         if (we) begin
             case (waddr[5:2])
-                `CSR_CTRL:   register_file[`CSR_CTRL] <= wdata;
+                4'h1:   register_file[4'h1] <= wdata; // For some reason CSR_CTRL define stopped working????
                 // Add more RW control registers here
                 default: ; // ignore writes to RO registers
             endcase
@@ -91,7 +91,7 @@ always_ff @(posedge clk or negedge rst_n) begin
         if (re) begin
             rdone <= 1'b1;
             case (raddr[5:2])
-                `CSR_CTRL,
+                4'h1,
                 `DST_MAC_L,
                 `DST_MAC_H,
                 `SRC_MAC_L,
