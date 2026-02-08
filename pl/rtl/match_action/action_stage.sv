@@ -14,7 +14,6 @@ module action_stage (
 
 // UNFINISHED !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-
 logic [9:0] action_idx;
 
 typedef struct packed {
@@ -37,6 +36,9 @@ assign action_idx = flow_hit ? flow_id[9:0] : '0;
 always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         wdone <= 1'b0;
+        for (int i = 0; i < 1024; i++) begin
+            action_table[i] <= '0;
+        end
     end
     else begin
         wdone <= 1'b0;

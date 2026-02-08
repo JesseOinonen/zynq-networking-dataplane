@@ -128,7 +128,7 @@ axi_addr_decode u_axi_addr_decode (
     .wdata_flow(wdata_flow_sig),
     .we_act(we_act_sig),
     .waddr_act(waddr_act_sig),
-    .wdata_act(wdata_act),
+    .wdata_act(wdata_act_sig),
     .wdone(wdone_sig),
     .rdone(rdone_sig),
     .rdata(rdata_sig)
