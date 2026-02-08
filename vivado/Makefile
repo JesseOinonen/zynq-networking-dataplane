@@ -11,7 +11,7 @@ $(BUILD):
 # Create project only if it does not exist
 project: $(BUILD)
 	if [ ! -f "$(BUILD)/$(PROJECT).xpr" ]; then \
-	    cd $(BUILD) && $(VIVADO) -mode batch -source ../../scripts/create_project.tcl ; \
+	    cd $(BUILD) && $(VIVADO) -mode batch -source ../../scripts/build.tcl ; \
 	fi
 
 # Run simulation using existing project

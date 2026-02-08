@@ -55,32 +55,32 @@ always_ff @(posedge clk or negedge rst_n) begin
 end
 
 
-always_ff @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
-        trap       <= 1'b0;
-        tdata_out  <= '0;
-        tvalid_out <= 1'b0;
-        tlast_out  <= 1'b0;
-    end
-    else begin
-        trap <= 1'b0;
-        if (flow_hit) begin
-           if (action_table[action_idx].valid && action_table[action_idx].flow_id == flow_id) begin
-                if (action_table[action_idx].drop) begin
-                    tlast_out <= 1'b0;
-                end
-                else if (action_table[action_idx].forward) begin
-                    tdata_out <= packet_data;
-                end
-                else if (action_table[action_idx].modify) begin
-                    tdata_out <= modify_packet(packet_data);
-                end
-                if (action_table[action_idx].trap) begin
-                    trap <= 1'b1;
-                end
-           end
-        end
-    end
-end
+//always_ff @(posedge clk or negedge rst_n) begin
+//    if (!rst_n) begin
+//        trap       <= 1'b0;
+//        tdata_out  <= '0;
+//        tvalid_out <= 1'b0;
+//        tlast_out  <= 1'b0;
+//    end
+//    else begin
+//        trap <= 1'b0;
+//        if (flow_hit) begin
+//           if (action_table[action_idx].valid && action_table[action_idx].flow_id == flow_id) begin
+//                if (action_table[action_idx].drop) begin
+//                    tlast_out <= 1'b0;
+//                end
+//                else if (action_table[action_idx].forward) begin
+//                    tdata_out <= packet_data;
+//                end
+//                else if (action_table[action_idx].modify) begin
+//                    tdata_out <= modify_packet(packet_data);
+//                end
+//                if (action_table[action_idx].trap) begin
+//                    trap <= 1'b1;
+//                end
+//           end
+//        end
+//    end
+//end
 
 endmodule
