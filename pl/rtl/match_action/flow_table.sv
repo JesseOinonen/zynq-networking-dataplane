@@ -5,12 +5,12 @@ module flow_table (
     input  logic         rst_n,
     input  logic [127:0] flow_key,
     input  logic         flow_key_valid,
-    input  logic [7:0]   waddr,      // Write address
-    input  logic [31:0]  wdata,      // Write data
-    input  logic         we,         // Write enable
-    output logic         flow_hit,
-    output logic [15:0]  flow_id,
-    output logic         wdone       // Write done
+    input  logic [7:0]   waddr,           // AXI4-Lite write address
+    input  logic [31:0]  wdata,           // AXI4-Lite write data
+    input  logic         we,              // AXI4-Lite write enable
+    output logic         flow_hit,        // Flow table hit
+    output logic [9:0]   flow_id,         // Flow id from flow table
+    output logic         wdone            // AXI4-Lite write done 
 );
 
 logic [15:0] hash;
@@ -19,12 +19,12 @@ logic [2:0] wr_cnt;
 typedef struct packed {
     logic         valid;
     logic [127:0] key;
-    logic [15:0]  id;
+    logic [9:0]   id;
 } flow_entry_t;
 
 flow_entry_t wr_entry_tmp;
 
-// Force BRAM
+// BRAM Flow Table
 (* ram_style = "block" *) flow_entry_t flow_table [0:255];
 
 flow_entry_t  rd_entry;
@@ -71,7 +71,7 @@ always_ff @(posedge clk or negedge rst_n) begin
                 3'd1: wr_entry_tmp.key[63:32]  <= wdata;
                 3'd2: wr_entry_tmp.key[95:64]  <= wdata;
                 3'd3: wr_entry_tmp.key[127:96] <= wdata;
-                3'd4: {wr_entry_tmp.valid, wr_entry_tmp.id} <= wdata[16:0]; 
+                3'd4: {wr_entry_tmp.valid, wr_entry_tmp.id} <= wdata[10:0]; 
             endcase
 
             wr_cnt <= wr_cnt + 1;

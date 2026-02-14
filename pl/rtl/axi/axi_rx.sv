@@ -8,7 +8,7 @@ module axi_rx #(
     input  logic [DATA_WIDTH/8-1:0] tkeep,
     input  logic                    tlast,
     output logic                    tready,
-    output logic [$clog2(DATA_WIDTH/8+1)-1:0] idx, // Index of valid bytes
+    output logic [$clog2(DATA_WIDTH/8)-1:0] idx,   // Index of valid bytes
     output logic [DATA_WIDTH-1:0]   tdata_out,     // AXI-Stream valid data
     output logic                    data_valid,    // Indicates valid data received
     output logic                    last_flag      // Indicates last beat of a packet
@@ -20,8 +20,8 @@ logic [$clog2(DATA_WIDTH/8+1)-1:0] widx;
 // Data reception logic
 always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-        tdata_out <= '0;
-        idx <= '0;
+        tdata_out  <= '0;
+        idx        <= '0;
         data_valid <= 1'b0;
         last_flag  <= 1'b0;
     end 
@@ -37,7 +37,8 @@ always_ff @(posedge clk or negedge rst_n) begin
                 end
             end
             data_valid <= 1'b1;
-            idx <= widx;
+            if (widx != 0) idx <= widx - 1;
+            else idx <= widx;
         end
     end
 end

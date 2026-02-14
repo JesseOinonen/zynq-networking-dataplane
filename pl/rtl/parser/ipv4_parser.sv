@@ -3,14 +3,14 @@ module ipv4_parser #(
 )(
     input  logic                    clk,
     input  logic                    rst_n,
-    input  logic [$clog2(DATA_WIDTH/8+1)-1:0] idx_in,
+    input  logic [$clog2(DATA_WIDTH/8)-1:0] idx_in,
     input  logic [DATA_WIDTH-1:0]   tdata_in,
     input  logic                    data_valid_in,
     input  logic                    eth_parser_ready,
     input  logic                    last_flag_in,
-    input  logic [3:0]              wcnt_eth,  // Indicates the byte that was left from previous parser
+    input  logic [3:0]              wcnt_eth,     // Indicates the byte that was left from previous parser
     output logic [DATA_WIDTH-1:0]   tdata_out,
-    output logic [$clog2(DATA_WIDTH/8+1)-1:0] idx_out,
+    output logic [$clog2(DATA_WIDTH/8)-1:0] idx_out,
     output logic                    data_valid_out,
     output logic                    last_flag_out,
     output logic                    ipv4_parser_ready,
@@ -61,7 +61,7 @@ always_ff @(posedge clk or negedge rst_n) begin
         wcnt_ipv4 <= '0;
         if (data_valid_in && eth_parser_ready && !ipv4_parser_ready) begin
             wcnt = 0;
-            for (int i = wcnt_eth; i < idx_in; i++) begin
+            for (int i = wcnt_eth; i <= idx_in; i++) begin
                 if ((counter + wcnt) == 0) begin
                     ihl     <= tdata_in[i*8 +: 4];
                     version <= tdata_in[i*8 + 4 +: 4];

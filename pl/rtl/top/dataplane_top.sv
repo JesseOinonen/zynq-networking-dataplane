@@ -23,78 +23,79 @@ module dataplane_top #(
     output logic                    RVALID,  
     output logic [31:0]             RDATA,   
     output logic [ 1:0]             RRESP,
-    //AXI-Stream interface
+    // AXI-Stream RX interface
     input  logic                    tvalid,
     input  logic [DATA_WIDTH-1:0]   tdata,
     input  logic [DATA_WIDTH/8-1:0] tkeep,
     input  logic                    tlast,
     output logic                    tready
+    // AXI-Stream TX interface
 );
 
-logic [31:0]                       waddr_sig;
-logic [31:0]                       wdata_sig;
-logic                              we_sig;
-logic [31:0]                       raddr_sig;
-logic                              re_sig;
-logic [31:0]                       rdata_sig;
-logic                              rdone_sig;
-logic                              wdone_sig;
-logic [31:0]                       waddr_csr_sig;
-logic [31:0]                       wdata_csr_sig;
-logic                              we_csr_sig;
-logic [31:0]                       raddr_csr_sig;
-logic                              re_csr_sig;
-logic [31:0]                       rdata_csr_sig;
-logic                              rdone_csr_sig;
-logic                              wdone_csr_sig;
-logic                              wdone_flow_sig;
-logic [7:0]                        waddr_flow_sig;
-logic [31:0]                       wdata_flow_sig;
-logic                              we_flow_sig;
-logic                              wdone_act_sig;
-logic [15:0]                       waddr_act_sig;
-logic [31:0]                       wdata_act_sig;
-logic                              we_act_sig;
-logic                              eth_parser_ready_sig;
-logic [$clog2(DATA_WIDTH/8+1)-1:0] idx_sig;
-logic [DATA_WIDTH-1:0]             tdata_sig;
-logic                              last_flag_sig;
-logic                              data_valid_sig;
-logic [DATA_WIDTH-1:0]             tdata_eth_sig;
-logic                              data_valid_eth_sig;
-logic [$clog2(DATA_WIDTH/8+1)-1:0] idx_eth_sig;
-logic                              last_flag_eth_sig;
-logic [DATA_WIDTH-1:0]             tdata_ipv4_sig;
-logic                              data_valid_ipv4_sig;
-logic [$clog2(DATA_WIDTH/8+1)-1:0] idx_ipv4_sig;
-logic                              last_flag_ipv4_sig;
-logic [47:0]                       dst_mac_sig;
-logic [47:0]                       src_mac_sig;
-logic [15:0]                       eth_type_sig;
-logic [31:0]                       src_ip_sig;
-logic [31:0]                       dst_ip_sig;
-logic [7:0]                        protocol_sig;
-logic                              ipv4_parser_ready_sig;
-logic                              upd_tcp_parser_ready_sig;
-logic [15:0]                       udp_src_port_sig;
-logic [15:0]                       udp_dst_port_sig;
-logic [15:0]                       udp_length_sig;
-logic [15:0]                       udp_checksum_sig;
-logic [15:0]                       tcp_src_port_sig;
-logic [15:0]                       tcp_dst_port_sig;
-logic [31:0]                       tcp_seq_num_sig;
-logic [31:0]                       tcp_ack_num_sig;
-logic [3:0]                        tcp_data_offset_sig;
-logic [5:0]                        tcp_flags_sig;
-logic [15:0]                       tcp_window_size_sig;
-logic [15:0]                       tcp_checksum_sig;
-logic [15:0]                       tcp_urgent_pointer_sig;
-logic [127:0]                      flow_key_sig;
-logic [3:0]                        wcnt_eth_sig;
-logic [4:0]                        wcnt_ipv4_sig;
-logic                              valid_flow_key_sig;
-logic                              flow_hit_sig;
-logic [15:0]                       flow_id_sig;
+logic [31:0]                     waddr_sig;
+logic [31:0]                     wdata_sig;
+logic                            we_sig;
+logic [31:0]                     raddr_sig;
+logic                            re_sig;
+logic [31:0]                     rdata_sig;
+logic                            rdone_sig;
+logic                            wdone_sig;
+logic [31:0]                     waddr_csr_sig;
+logic [31:0]                     wdata_csr_sig;
+logic                            we_csr_sig;
+logic [31:0]                     raddr_csr_sig;
+logic                            re_csr_sig;
+logic [31:0]                     rdata_csr_sig;
+logic                            rdone_csr_sig;
+logic                            wdone_csr_sig;
+logic                            wdone_flow_sig;
+logic [7:0]                      waddr_flow_sig;
+logic [31:0]                     wdata_flow_sig;
+logic                            we_flow_sig;
+logic                            wdone_act_sig;
+logic [9:0]                      waddr_act_sig;
+logic [31:0]                     wdata_act_sig;
+logic                            we_act_sig;
+logic                            eth_parser_ready_sig;
+logic [$clog2(DATA_WIDTH/8)-1:0] idx_sig;
+logic [DATA_WIDTH-1:0]           tdata_sig;
+logic                            last_flag_sig;
+logic                            data_valid_sig;
+logic [DATA_WIDTH-1:0]           tdata_eth_sig;
+logic                            data_valid_eth_sig;
+logic [$clog2(DATA_WIDTH/8)-1:0] idx_eth_sig;
+logic                            last_flag_eth_sig;
+logic [DATA_WIDTH-1:0]           tdata_ipv4_sig;
+logic                            data_valid_ipv4_sig;
+logic [$clog2(DATA_WIDTH/8)-1:0] idx_ipv4_sig;
+logic                            last_flag_ipv4_sig;
+logic [47:0]                     dst_mac_sig;
+logic [47:0]                     src_mac_sig;
+logic [15:0]                     eth_type_sig;
+logic [31:0]                     src_ip_sig;
+logic [31:0]                     dst_ip_sig;
+logic [7:0]                      protocol_sig;
+logic                            ipv4_parser_ready_sig;
+logic                            upd_tcp_parser_ready_sig;
+logic [15:0]                     udp_src_port_sig;
+logic [15:0]                     udp_dst_port_sig;
+logic [15:0]                     udp_length_sig;
+logic [15:0]                     udp_checksum_sig;
+logic [15:0]                     tcp_src_port_sig;
+logic [15:0]                     tcp_dst_port_sig;
+logic [31:0]                     tcp_seq_num_sig;
+logic [31:0]                     tcp_ack_num_sig;
+logic [3:0]                      tcp_data_offset_sig;
+logic [5:0]                      tcp_flags_sig;
+logic [15:0]                     tcp_window_size_sig;
+logic [15:0]                     tcp_checksum_sig;
+logic [15:0]                     tcp_urgent_pointer_sig;
+logic [127:0]                    flow_key_sig;
+logic [3:0]                      wcnt_eth_sig;
+logic [4:0]                      wcnt_ipv4_sig;
+logic                            valid_flow_key_sig;
+logic                            flow_hit_sig;
+logic [9:0]                      flow_id_sig;
 
 action_stage u_action_stage (
     .clk(clk),

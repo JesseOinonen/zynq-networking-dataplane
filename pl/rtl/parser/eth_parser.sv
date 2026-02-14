@@ -3,12 +3,12 @@ module eth_parser #(
 )(
     input  logic                    clk,
     input  logic                    rst_n,
-    input  logic [$clog2(DATA_WIDTH/8+1)-1:0] idx_in,
+    input  logic [$clog2(DATA_WIDTH/8)-1:0] idx_in,
     input  logic [DATA_WIDTH-1:0]   tdata_in,
     input  logic                    data_valid_in,
     input  logic                    last_flag_in,
     output logic [DATA_WIDTH-1:0]   tdata_out,
-    output logic [$clog2(DATA_WIDTH/8+1)-1:0] idx_out,
+    output logic [$clog2(DATA_WIDTH/8)-1:0] idx_out,
     output logic                    data_valid_out,
     output logic                    last_flag_out,
     output logic                    eth_parser_ready,
@@ -70,7 +70,7 @@ always_ff @(posedge clk or negedge rst_n) begin
         wcnt_eth <= '0;
         if (data_valid_in && !eth_parser_ready) begin
             wcnt = 0;
-            for (int i = 0; i < idx_in; i++) begin
+            for (int i = 0; i <= idx_in; i++) begin
                 if ((counter + wcnt) < 6)       dst_mac[(5 - (counter + wcnt))*8 +: 8]   <= tdata_in[i*8 +: 8];
                 else if ((counter + wcnt) < 12) src_mac[(11 - (counter + wcnt))*8 +: 8]  <= tdata_in[i*8 +: 8];
                 else if ((counter + wcnt) < 14) eth_type[(13 - (counter + wcnt))*8 +: 8] <= tdata_in[i*8 +: 8];

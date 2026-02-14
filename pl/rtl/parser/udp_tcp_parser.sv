@@ -3,7 +3,7 @@ module udp_tcp_parser #(
 )(
     input  logic                    clk,
     input  logic                    rst_n,
-    input  logic [$clog2(DATA_WIDTH/8+1)-1:0] idx_in,
+    input  logic [$clog2(DATA_WIDTH/8)-1:0] idx_in,
     input  logic                    last_flag_in,
     input  logic [DATA_WIDTH-1:0]   tdata_in,
     input  logic                    data_valid_in,
@@ -54,7 +54,7 @@ always_ff @(posedge clk or negedge rst_n) begin
         if (protocol == 6) begin // TCP
             if (data_valid_in && ipv4_parser_ready && !upd_tcp_parser_ready) begin
                 wcnt = 0;
-                for (int i = wcnt_ipv4; i < idx_in; i++) begin
+                for (int i = wcnt_ipv4; i <= idx_in; i++) begin
                     case (tcp_counter+wcnt)
                         0,1: tcp_src_port[(1 - (tcp_counter+wcnt))*8 +: 8]       <= tdata_in[i*8 +: 8];
                         2,3: tcp_dst_port[(3 - (tcp_counter+wcnt))*8 +: 8]       <= tdata_in[i*8 +: 8];
