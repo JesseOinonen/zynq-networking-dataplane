@@ -8,8 +8,8 @@ import action_stage_testcase_pkg::*;
 module top; 
     logic clk;
     logic rst_n;
-    int   passed1, passed2, passed3, passed4, passed5, passed;
-    int   total1, total2, total3, total4, total5, total;
+    int   passed;
+    int   total;
 
     rst_gen u_rst_gen (
         .rst_n(rst_n)
@@ -22,7 +22,7 @@ module top;
     axi_if tb_axi(clk);
 
     dataplane_top #(.DATA_WIDTH(64)) u_dataplane_top (
-        .clk    (clk),
+        .clk125 (clk),
         .rst_n  (rst_n),
         .AWADDR (tb_axi.AWADDR),
         .AWPROT (tb_axi.AWPROT),
@@ -50,7 +50,22 @@ module top;
         .tready (tb_axi.tready)
     );
 
+    task automatic run_test(string name, output int passed, output int total);
+        passed = 0;
+        total  = 0;
+
+        if      (name == "axi4_lite")    axi4_lite_testcase(tb_axi, passed, total);
+        else if (name == "axi_rx")       axi_rx_testcase(tb_axi, passed, total);
+        else if (name == "flow_key_gen") flow_key_gen_testcase(tb_axi, passed, total);
+        else if (name == "flow_table")   flow_table_testcase(tb_axi, passed, total);
+        else if (name == "action_stage") action_stage_testcase(tb_axi, passed, total);
+        else    $fatal(1, "Unknown test '%s'", name);
+
+    endtask
+
     initial begin
+        string testname;
+
         tb_axi.AWADDR  = '0; 
         tb_axi.WDATA   = '0;
         tb_axi.ARADDR  = '0;
@@ -68,33 +83,23 @@ module top;
         tb_axi.tkeep   = '0;
         tb_axi.tlast   = 0;
 
+        // Get test name from plusargs, default to axi4_lite
+        if (!$value$plusargs("TEST=%s", testname)) begin
+            testname = "axi4_lite";
+        end
+
         $display("Starting testbench...");
         wait (rst_n == 1);
         $display("Rst detected...");
 
-        axi4_lite_testcase(tb_axi, passed1, total1);
-        total  += total1;
-        passed += passed1;
+        $display("Starting testbench... TEST=%s", testname);
 
-        axi_rx_testcase(tb_axi, passed2, total2);
-        total  += total2;
-        passed += passed2;
+        run_test(testname, passed, total);
 
-        flow_key_gen_testcase(tb_axi, passed3, total3);
-        total  += total3;
-        passed += passed3;
+        $display("RESULT: %0d / %0d PASSED (TEST=%s)", passed, total, testname);
 
-        flow_table_testcase(tb_axi, passed4, total4);
-        total  += total4;
-        passed += passed4;
-
-        action_stage_testcase(tb_axi, passed5, total5);
-        total  += total5;
-        passed += passed5;
-
-        $display("Testbench finished. %0d / %0d PASSED", passed, total);
-        $finish;
+        if (passed != total) $fatal(1, "TEST FAILED");
+        else $finish;
     end
-    
     
 endmodule
