@@ -1,7 +1,7 @@
 module dataplane_top #(
     parameter DATA_WIDTH = 64
 )(
-    input  logic                    clk,
+    input  logic                    clk125,
     input  logic                    rst_n,
     // AXI4-Lite interface
     input  logic [31:0]             AWADDR,  
@@ -97,8 +97,8 @@ logic                            valid_flow_key_sig;
 logic                            flow_hit_sig;
 logic [9:0]                      flow_id_sig;
 
-action_stage u_action_stage (
-    .clk(clk),
+action_stage #(.DATA_WIDTH(DATA_WIDTH)) u_action_stage (
+    .clk(clk125),
     .rst_n(rst_n),
     .flow_hit(flow_hit_sig),
     .flow_id(flow_id_sig),
@@ -136,7 +136,7 @@ axi_addr_decode u_axi_addr_decode (
 );
 
 axi_lite_slave u_axi_lite_slave (
-    .clk(clk),
+    .clk(clk125),
     .rst_n(rst_n),
     .AWADDR(AWADDR),  
     .AWPROT(AWPROT),  
@@ -168,7 +168,7 @@ axi_lite_slave u_axi_lite_slave (
 );
 
 axi_rx #(.DATA_WIDTH(DATA_WIDTH)) u_axi_rx (
-    .clk(clk),
+    .clk(clk125),
     .rst_n(rst_n),
     .tvalid(tvalid),
     .tdata(tdata),
@@ -182,7 +182,7 @@ axi_rx #(.DATA_WIDTH(DATA_WIDTH)) u_axi_rx (
 );
 
 csr u_csr (
-    .clk(clk),
+    .clk(clk125),
     .rst_n(rst_n),
     .waddr(waddr_csr_sig), 
     .wdata(wdata_csr_sig), 
@@ -210,7 +210,7 @@ csr u_csr (
 );
 
 eth_parser #(.DATA_WIDTH(DATA_WIDTH)) u_eth_parser (
-    .clk(clk),
+    .clk(clk125),
     .rst_n(rst_n),
     .idx_in(idx_sig),
     .tdata_in(tdata_sig),
@@ -228,7 +228,7 @@ eth_parser #(.DATA_WIDTH(DATA_WIDTH)) u_eth_parser (
 );
 
 flow_key_gen u_flow_key_gen (
-    .clk(clk),
+    .clk(clk125),
     .rst_n(rst_n),
     .eth_type(eth_type_sig),
     .eth_parser_ready(eth_parser_ready_sig),
@@ -246,7 +246,7 @@ flow_key_gen u_flow_key_gen (
 );
 
 flow_table u_flow_table (
-    .clk(clk),
+    .clk(clk125),
     .rst_n(rst_n),
     .flow_key(flow_key_sig),
     .flow_key_valid(valid_flow_key_sig),
@@ -259,7 +259,7 @@ flow_table u_flow_table (
 );
 
 ipv4_parser #(.DATA_WIDTH(DATA_WIDTH)) u_ipv4_parser (
-    .clk(clk),
+    .clk(clk125),
     .rst_n(rst_n),
     .idx_in(idx_eth_sig),
     .tdata_in(tdata_eth_sig),
@@ -279,7 +279,7 @@ ipv4_parser #(.DATA_WIDTH(DATA_WIDTH)) u_ipv4_parser (
 );
 
 udp_tcp_parser #(.DATA_WIDTH(DATA_WIDTH)) u_udp_tcp_parser (
-    .clk(clk),
+    .clk(clk125),
     .rst_n(rst_n),
     .idx_in(idx_ipv4_sig),
     .last_flag_in(last_flag_ipv4_sig),

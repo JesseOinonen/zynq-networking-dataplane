@@ -1,16 +1,16 @@
 import dataplane_pkg::*;
 
-module action_stage (
+module action_stage #(
+    parameter DATA_WIDTH = 64
+)(
     input  logic        clk,
     input  logic        rst_n,
     input  logic        flow_hit, // flow_table hit
     input  logic [9:0]  flow_id,  // flow_table input
-    // AXI4-Lite signals
     input  logic [9:0]  waddr,    // AXI4-Lite write address
     input  logic [31:0] wdata,    // AXI4-Lite write data
     input  logic        we,       // AXI4-Lite write enable
     output logic        wdone     // AXI4-Lite write done
-    //AXI-Stream signals
 );
 
 
