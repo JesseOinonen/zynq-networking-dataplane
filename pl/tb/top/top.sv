@@ -5,6 +5,8 @@ import flow_key_gen_testcase_pkg::*;
 import flow_table_testcase_pkg::*;
 import action_stage_testcase_pkg::*;
 
+`timescale 1ns/1ps
+
 module top; 
     logic clk;
     logic rst_n;
@@ -85,7 +87,7 @@ module top;
 
         // Get test name from plusargs, default to axi4_lite
         if (!$value$plusargs("TEST=%s", testname)) begin
-            testname = "axi4_lite";
+            testname = "flow_table";
         end
 
         $display("Starting testbench...");
@@ -97,6 +99,8 @@ module top;
         run_test(testname, passed, total);
 
         $display("RESULT: %0d / %0d PASSED (TEST=%s)", passed, total, testname);
+
+        #1us;
 
         if (passed != total) $fatal(1, "TEST FAILED");
         else $finish;

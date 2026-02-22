@@ -1,6 +1,11 @@
 package axi4_lite_testcase_pkg;
     `include "../top/register.svh"
 
+    //-----------------------------------------
+    // AXI4-Lite Testcase
+    // Write to AXI4-Lite registers and read back to verify
+    // Write to control register, read back and verify
+    //-----------------------------------------
     task axi4_lite_testcase(input virtual axi_if axi, output int passed, output int total);
         logic [31:0] read_data;
 

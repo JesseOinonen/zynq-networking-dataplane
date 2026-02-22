@@ -1,10 +1,17 @@
 package axi_rx_testcase_pkg;
     `include "../top/register.svh"
 
+    //-----------------------------------------
+    // AXI RX Testcase
+    // Send different headers back to back
+    // Send different combinations of tkeep
+    // Send different packet sizes
+    //-----------------------------------------
     task axi_rx_testcase(input virtual axi_if axi, output int passed, output int total);
         logic [31:0] read_data;
         
         $display("Running axi_rx_testcase...");
+        // Header 1
         // Ethernet Frame:
             // Destination MAC: DA:02:03:04:05:06
             // Source MAC:      5A:02:03:04:05:06
@@ -24,7 +31,7 @@ package axi_rx_testcase_pkg;
             // Flags: SYN (50 02)
             // Window Size: 7210 (72 10)
         
-        // Send HEADER
+        // Send HEADER 1
         axi.stream_send(64'h025A0605040302DA, 8'hFF, 0);
         axi.stream_send(64'h0045000806050403, 8'hFF, 0);
         axi.stream_send(64'h0640004012342800, 8'hFF, 0);
