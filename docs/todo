@@ -1,7 +1,8 @@
 Start with PL and design/verify according to datapath
-> Design & verify AXI module
 
 PS acts as axi transactions to pl, model that to submodules and make common functions for common transfers.
+
+Parser counters have issues with synthesis. They should be constants and not coming directly via signal.
 
 FIX FLOW_TABLE COUNTER & FLOW_TABLE FLOWKEY MATCHING + FLOW_HIT LOGIC
 DO ACTION_STAGE
