@@ -52,7 +52,7 @@ always_ff @(posedge clk or negedge rst_n) begin
     end
     else begin
         wdone <= 1'b0;
-        if (we) begin
+        if (we && !wdone) begin
             if (axi_w_counter < 1) begin
                 action_table[waddr].drop     <= wdata[0];
                 action_table[waddr].forward  <= wdata[1];

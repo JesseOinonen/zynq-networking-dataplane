@@ -15,6 +15,8 @@ package action_stage_testcase_pkg;
         axi.write(32'h4003FFFC, 32'h2);
         passed++;
 
+        #10us;
+        
         $display("Completed action_stage_testcase.");
     endtask
 
