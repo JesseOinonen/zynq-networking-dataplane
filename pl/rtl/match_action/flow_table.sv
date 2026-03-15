@@ -14,7 +14,8 @@ module flow_table (
 );
 
 logic [15:0] hash;
-logic [2:0] wr_cnt;
+logic [2:0]  wr_cnt;
+logic        flow_table_rdy;
 
 typedef struct packed {
     logic         valid;
@@ -56,16 +57,22 @@ end
 // Write flow_table from PS (AXI4-lite, 32bits at a time)
 always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-        wr_cnt       <= '0;
-        wdone        <= 1'b0;
-        wr_entry_tmp <= '0;
+        wr_cnt         <= '0;
+        wdone          <= 1'b0;
+        wr_entry_tmp   <= '0;
+        flow_table_rdy <= 1'b0;
         for (int i = 0; i < 256; i++) begin
             flow_table[i] <= '0;
         end
     end
     else begin
-        wdone <= 1'b0;
-        if (we) begin
+        if (flow_table_rdy) begin 
+            flow_table[waddr] <= wr_entry_tmp;
+            flow_table_rdy    <= 1'b0;
+            wr_entry_tmp      <= '0;
+        end
+        wdone          <= 1'b0;
+        if (we && !wdone) begin
             case(wr_cnt)
                 3'd0: wr_entry_tmp.key[31:0]   <= wdata;
                 3'd1: wr_entry_tmp.key[63:32]  <= wdata;
@@ -77,8 +84,8 @@ always_ff @(posedge clk or negedge rst_n) begin
             wr_cnt <= wr_cnt + 1;
 
             if (wr_cnt == 3'd4) begin
-                flow_table[waddr] <= wr_entry_tmp;
-                wr_cnt <= 0;
+                wr_cnt            <= 0;
+                flow_table_rdy    <= 1'b1;
             end
             wdone <= 1'b1;
         end

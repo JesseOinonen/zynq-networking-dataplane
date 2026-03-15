@@ -83,7 +83,7 @@ always_ff @(posedge clk or negedge rst_n) begin
         end
 
         // Write is ready when both address and data are captured
-        if (awaddr_valid && wdata_valid) begin
+        if (!wdone && awaddr_valid && wdata_valid) begin
             we <= 1'b1;
         end
     end
