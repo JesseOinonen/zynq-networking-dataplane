@@ -4,11 +4,6 @@ This document explains how to run simulations for the Zynq Networking Dataplane 
 
 ## Quick Start
 
-All simulation commands should be run from the `vivado/` directory:
-
-```bash
-cd vivado/
-```
 
 ### Run a Single Test
 ```bash
