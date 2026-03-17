@@ -23,7 +23,6 @@ logic [DATA_WIDTH-1:0] tdata_out;
 logic tvalid_out;
 logic tlast_out;
 
-logic [9:0] flow_id;
 logic [2:0] axi_w_counter;
 logic [9:0] waddr_ff; // Registered address for modify action check
 
