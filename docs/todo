@@ -1,5 +1,8 @@
 Start with PL and design/verify according to datapath
 
+Add axi_rx backpressure
+Add FIFO to rx_fifo for axi_rx (flow search takes ~10 clock cycles)
+
 DO ACTION_STAGE
 
 FIX THE VIVADO FLOW SCRIPTS TO FULLY WORK AND LOOK MORE CLOSER INTO THEM
