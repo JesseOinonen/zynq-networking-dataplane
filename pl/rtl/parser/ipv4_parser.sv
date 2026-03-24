@@ -22,6 +22,7 @@ module ipv4_parser #(
 
 logic [4:0] counter;
 logic [4:0] wcnt;
+logic       done;
 logic [3:0] ihl;
 logic [3:0] version;
 logic [5:0] ipv4_header_length;
@@ -61,25 +62,28 @@ always_ff @(posedge clk or negedge rst_n) begin
         wcnt_ipv4 <= '0;
         if (data_valid_in && eth_parser_ready && !ipv4_parser_ready) begin
             wcnt = 0;
-            for (int i = wcnt_eth; i <= idx_in; i++) begin
-                if ((counter + wcnt) == 0) begin
-                    ihl     <= tdata_in[i*8 +: 4];
-                    version <= tdata_in[i*8 + 4 +: 4];
-                end
-                else if ((counter + wcnt) == 9) protocol <= tdata_in[i*8 +: 8];
-                else if (((counter + wcnt) > 11) && ((counter + wcnt) < 16)) src_ip[(15-(counter + wcnt))*8 +: 8] <= tdata_in[i*8 +: 8];
-                else if (((counter + wcnt) < 20)) dst_ip[(19-(counter + wcnt))*8 +: 8] <= tdata_in[i*8 +: 8];
-                wcnt++;
-                // When ipv4_header_length bytes have been received IPV4 header is complete
-                if ((counter + wcnt) >= ipv4_header_length) begin
-                    ipv4_parser_ready <= 1'b1;
-                    wcnt_ipv4 <= wcnt;
-                    counter <= '0;
-                    wcnt = 0;
-                    break;
+            done = 1'b0;
+            for (int i = 0; i < DATA_WIDTH/8; i++) begin
+                if (!done && i >= wcnt_eth && i <= idx_in) begin
+                    if ((counter + wcnt) == 0) begin
+                        ihl     <= tdata_in[i*8 +: 4];
+                        version <= tdata_in[i*8 + 4 +: 4];
+                    end
+                    else if ((counter + wcnt) == 9) protocol <= tdata_in[i*8 +: 8];
+                    else if (((counter + wcnt) > 11) && ((counter + wcnt) < 16)) src_ip[(15-(counter + wcnt))*8 +: 8] <= tdata_in[i*8 +: 8];
+                    else if (((counter + wcnt) < 20)) dst_ip[(19-(counter + wcnt))*8 +: 8] <= tdata_in[i*8 +: 8];
+                    wcnt++;
+                    // When ipv4_header_length bytes have been received IPV4 header is complete
+                    if ((counter + wcnt) >= ipv4_header_length) begin
+                        ipv4_parser_ready <= 1'b1;
+                        wcnt_ipv4 <= wcnt;
+                        done = 1'b1;
+                        wcnt = 0;
+                    end
                 end
             end
-            counter <= counter + wcnt;
+            if (done) counter <= '0;
+            else      counter <= counter + wcnt;
         end
         if (!eth_parser_ready) begin
             ipv4_parser_ready <= 1'b0;

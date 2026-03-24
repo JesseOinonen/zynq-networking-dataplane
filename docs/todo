@@ -1,7 +1,5 @@
 Start with PL and design/verify according to datapath
 
-Parser counters have issues with synthesis. They should be constants and not coming directly via signal.
-
 DO ACTION_STAGE
 
 FIX THE VIVADO FLOW SCRIPTS TO FULLY WORK AND LOOK MORE CLOSER INTO THEM

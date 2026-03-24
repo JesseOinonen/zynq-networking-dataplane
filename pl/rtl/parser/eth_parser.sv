@@ -20,6 +20,7 @@ module eth_parser #(
 
 logic [3:0] counter;
 logic [3:0] wcnt;
+logic       done;
 logic       sop;
 logic       in_packet;
 
@@ -70,21 +71,24 @@ always_ff @(posedge clk or negedge rst_n) begin
         wcnt_eth <= '0;
         if (data_valid_in && !eth_parser_ready) begin
             wcnt = 0;
-            for (int i = 0; i <= idx_in; i++) begin
-                if ((counter + wcnt) < 6)       dst_mac[(5 - (counter + wcnt))*8 +: 8]   <= tdata_in[i*8 +: 8];
-                else if ((counter + wcnt) < 12) src_mac[(11 - (counter + wcnt))*8 +: 8]  <= tdata_in[i*8 +: 8];
-                else if ((counter + wcnt) < 14) eth_type[(13 - (counter + wcnt))*8 +: 8] <= tdata_in[i*8 +: 8];
-                wcnt++;
-                // When 14 bytes have been received ethernet header is complete
-                if ((counter + wcnt) >= 14) begin
-                    eth_parser_ready <= 1'b1;
-                    wcnt_eth <= wcnt;
-                    counter <= '0;
-                    wcnt = 0;
-                    break;
+            done = 1'b0;
+            for (int i = 0; i < DATA_WIDTH/8; i++) begin
+                if (!done && i <= idx_in) begin
+                    if ((counter + wcnt) < 6)       dst_mac[(5 - (counter + wcnt))*8 +: 8]   <= tdata_in[i*8 +: 8];
+                    else if ((counter + wcnt) < 12) src_mac[(11 - (counter + wcnt))*8 +: 8]  <= tdata_in[i*8 +: 8];
+                    else if ((counter + wcnt) < 14) eth_type[(13 - (counter + wcnt))*8 +: 8] <= tdata_in[i*8 +: 8];
+                    wcnt++;
+                    // When 14 bytes have been received ethernet header is complete
+                    if ((counter + wcnt) >= 14) begin
+                        eth_parser_ready <= 1'b1;
+                        wcnt_eth <= wcnt;
+                        done = 1'b1;
+                        wcnt = 0;
+                    end
                 end
             end
-            counter <= counter + wcnt;
+            if (done) counter <= '0;
+            else      counter <= counter + wcnt;
         end
         if (sop) begin
             eth_parser_ready <= 1'b0;

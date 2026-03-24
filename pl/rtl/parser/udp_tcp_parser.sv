@@ -29,6 +29,7 @@ module udp_tcp_parser #(
 logic [2:0]  udp_counter;
 logic [4:0]  tcp_counter;
 logic [4:0]  wcnt;
+logic        done;
 
 // UPD/TCP header parsing
 always_ff @(posedge clk or negedge rst_n) begin
@@ -54,53 +55,59 @@ always_ff @(posedge clk or negedge rst_n) begin
         if (protocol == 6) begin // TCP
             if (data_valid_in && ipv4_parser_ready && !upd_tcp_parser_ready) begin
                 wcnt = 0;
-                for (int i = wcnt_ipv4; i <= idx_in; i++) begin
-                    case (tcp_counter+wcnt)
-                        0,1: tcp_src_port[(1 - (tcp_counter+wcnt))*8 +: 8]       <= tdata_in[i*8 +: 8];
-                        2,3: tcp_dst_port[(3 - (tcp_counter+wcnt))*8 +: 8]       <= tdata_in[i*8 +: 8];
-                        4,5,6,7: tcp_seq_num[(7 - (tcp_counter+wcnt))*8 +: 8]    <= tdata_in[i*8 +: 8];
-                        8,9,10,11: tcp_ack_num[(11 - (tcp_counter+wcnt))*8 +: 8] <= tdata_in[i*8 +: 8];
-                        12: begin
-                                tcp_data_offset <= tdata_in[i*8 +: 4];
-                                tcp_flags[5:4]  <= tdata_in[i*8 + 4 +: 2];
-                            end
-                        13: tcp_flags[3:0] <= tdata_in[i*8 +: 4];
-                        14,15: tcp_window_size[(15 - (tcp_counter+wcnt))*8 +: 8]    <= tdata_in[i*8 +: 8];
-                        16,17: tcp_checksum[(17 - (tcp_counter+wcnt))*8 +: 8]       <= tdata_in[i*8 +: 8];
-                        18,19: tcp_urgent_pointer[(19 - (tcp_counter+wcnt))*8 +: 8] <= tdata_in[i*8 +: 8];
-                        default: ;
-                    endcase
-                    wcnt++;
-                    if ((tcp_counter+wcnt) >= 20) begin
-                        tcp_counter <= '0;
-                        wcnt = 0;
-                        upd_tcp_parser_ready <= 1'b1;
-                        break;
+                done = 1'b0;
+                for (int i = 0; i < DATA_WIDTH/8; i++) begin
+                    if (!done && i >= wcnt_ipv4 && i <= idx_in) begin
+                        case (tcp_counter+wcnt)
+                            0,1: tcp_src_port[(1 - (tcp_counter+wcnt))*8 +: 8]       <= tdata_in[i*8 +: 8];
+                            2,3: tcp_dst_port[(3 - (tcp_counter+wcnt))*8 +: 8]       <= tdata_in[i*8 +: 8];
+                            4,5,6,7: tcp_seq_num[(7 - (tcp_counter+wcnt))*8 +: 8]    <= tdata_in[i*8 +: 8];
+                            8,9,10,11: tcp_ack_num[(11 - (tcp_counter+wcnt))*8 +: 8] <= tdata_in[i*8 +: 8];
+                            12: begin
+                                    tcp_data_offset <= tdata_in[i*8 +: 4];
+                                    tcp_flags[5:4]  <= tdata_in[i*8 + 4 +: 2];
+                                end
+                            13: tcp_flags[3:0] <= tdata_in[i*8 +: 4];
+                            14,15: tcp_window_size[(15 - (tcp_counter+wcnt))*8 +: 8]    <= tdata_in[i*8 +: 8];
+                            16,17: tcp_checksum[(17 - (tcp_counter+wcnt))*8 +: 8]       <= tdata_in[i*8 +: 8];
+                            18,19: tcp_urgent_pointer[(19 - (tcp_counter+wcnt))*8 +: 8] <= tdata_in[i*8 +: 8];
+                            default: ;
+                        endcase
+                        wcnt++;
+                        if ((tcp_counter+wcnt) >= 20) begin
+                            upd_tcp_parser_ready <= 1'b1;
+                            done = 1'b1;
+                            wcnt = 0;
+                        end
                     end
                 end
-                tcp_counter <= tcp_counter + wcnt;
+                if (done) tcp_counter <= '0;
+                else      tcp_counter <= tcp_counter + wcnt;
             end
         end
         else if (protocol == 17) begin // UDP
             if (data_valid_in && ipv4_parser_ready && !upd_tcp_parser_ready) begin
                 wcnt = 0;
-                for (int i = wcnt_ipv4; i < idx_in; i++) begin
-                    case (udp_counter+wcnt)
-                        0,1: udp_src_port[(1 - (udp_counter+wcnt))*8 +: 8] <= tdata_in[i*8 +: 8];
-                        2,3: udp_dst_port[(3 - (udp_counter+wcnt))*8 +: 8] <= tdata_in[i*8 +: 8];
-                        4,5: udp_length[(5 - (udp_counter+wcnt))*8 +: 8]   <= tdata_in[i*8 +: 8];
-                        6,7: udp_checksum[(7 - (udp_counter+wcnt))*8 +: 8] <= tdata_in[i*8 +: 8];
-                        default: ;
-                    endcase
-                    wcnt++;
-                    if ((udp_counter+wcnt) >= 8) begin
-                        udp_counter <= '0;
-                        wcnt = 0;
-                        upd_tcp_parser_ready <= 1'b1;
-                        break;
+                done = 1'b0;
+                for (int i = 0; i < DATA_WIDTH/8; i++) begin
+                    if (!done && i >= wcnt_ipv4 && i < idx_in) begin
+                        case (udp_counter+wcnt)
+                            0,1: udp_src_port[(1 - (udp_counter+wcnt))*8 +: 8] <= tdata_in[i*8 +: 8];
+                            2,3: udp_dst_port[(3 - (udp_counter+wcnt))*8 +: 8] <= tdata_in[i*8 +: 8];
+                            4,5: udp_length[(5 - (udp_counter+wcnt))*8 +: 8]   <= tdata_in[i*8 +: 8];
+                            6,7: udp_checksum[(7 - (udp_counter+wcnt))*8 +: 8] <= tdata_in[i*8 +: 8];
+                            default: ;
+                        endcase
+                        wcnt++;
+                        if ((udp_counter+wcnt) >= 8) begin
+                            upd_tcp_parser_ready <= 1'b1;
+                            done = 1'b1;
+                            wcnt = 0;
+                        end
                     end
                 end
-                udp_counter <= udp_counter + wcnt;
+                if (done) udp_counter <= '0;
+                else      udp_counter <= udp_counter + wcnt;
             end
         end
         if (!last_flag_in) begin
