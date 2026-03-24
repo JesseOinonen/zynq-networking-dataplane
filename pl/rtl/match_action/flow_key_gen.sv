@@ -78,7 +78,7 @@ always_ff @(posedge clk or negedge rst_n) begin
         end
 
         if (gen_flow_key) begin
-            flow_key = {24'h0,
+            flow_key <= {24'h0,
                         src_ip_capt, 
                         dst_ip_capt, 
                         src_port_capt, 
