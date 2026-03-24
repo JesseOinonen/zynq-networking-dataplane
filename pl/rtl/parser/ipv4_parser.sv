@@ -71,7 +71,7 @@ always_ff @(posedge clk or negedge rst_n) begin
                     end
                     else if ((counter + wcnt) == 9) protocol <= tdata_in[i*8 +: 8];
                     else if (((counter + wcnt) > 11) && ((counter + wcnt) < 16)) src_ip[(15-(counter + wcnt))*8 +: 8] <= tdata_in[i*8 +: 8];
-                    else if (((counter + wcnt) < 20)) dst_ip[(19-(counter + wcnt))*8 +: 8] <= tdata_in[i*8 +: 8];
+                    else if (((counter + wcnt) < 20) && ((counter + wcnt) >= 16)) dst_ip[(19-(counter + wcnt))*8 +: 8] <= tdata_in[i*8 +: 8];
                     wcnt++;
                     // When ipv4_header_length bytes have been received IPV4 header is complete
                     if ((counter + wcnt) >= ipv4_header_length) begin
