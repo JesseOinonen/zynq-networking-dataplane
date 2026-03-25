@@ -87,7 +87,7 @@ module top;
 
         // Get test name from plusargs, default to axi4_lite
         if (!$value$plusargs("TEST=%s", testname)) begin
-            testname = "action_stage";
+            testname = "flow_table";
         end
 
         $display("Starting testbench...");

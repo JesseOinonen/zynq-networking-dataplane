@@ -43,35 +43,35 @@ always_ff @(posedge clk or negedge rst_n) begin
         wdone <= 1'b0;
         // READ-ONLY status from parser
         if (eth_ready) begin
-            register_file[`DST_MAC_L]   <= dst_mac[31:0];
-            register_file[`DST_MAC_H]   <= {16'b0, dst_mac[47:32]};
-            register_file[`SRC_MAC_L]   <= src_mac[31:0];
-            register_file[`SRC_MAC_H]   <= {16'b0, src_mac[47:32]};
-            register_file[`ETH_TYPE]    <= {16'b0, eth_type};
+            register_file[DST_MAC_L]   <= dst_mac[31:0];
+            register_file[DST_MAC_H]   <= {16'b0, dst_mac[47:32]};
+            register_file[SRC_MAC_L]   <= src_mac[31:0];
+            register_file[SRC_MAC_H]   <= {16'b0, src_mac[47:32]};
+            register_file[ETH_TYPE]    <= {16'b0, eth_type};
         end
 
         if (ipv4_ready) begin
-            register_file[`SRC_IP]      <= src_ip;
-            register_file[`DST_IP]      <= dst_ip;
-            register_file[`PROTOCOL]    <= {16'b0, protocol};
+            register_file[SRC_IP]      <= src_ip;
+            register_file[DST_IP]      <= dst_ip;
+            register_file[PROTOCOL]    <= {16'b0, protocol};
         end
 
         if (udp_tcp_ready) begin
-            register_file[`UDP_PORT]    <= {udp_src_port[15:0], udp_dst_port[15:0]};
-            register_file[`TCP_PORT]    <= {tcp_src_port[15:0], tcp_dst_port[15:0]};
+            register_file[UDP_PORT]    <= {udp_src_port[15:0], udp_dst_port[15:0]};
+            register_file[TCP_PORT]    <= {tcp_src_port[15:0], tcp_dst_port[15:0]};
         end
 
         if (flow_key_valid) begin
-            register_file[`FLOW_KEY_32]  <= flow_key[31:0];
-            register_file[`FLOW_KEY_64]  <= flow_key[63:32];
-            register_file[`FLOW_KEY_96]  <= flow_key[95:64];
-            register_file[`FLOW_KEY_128] <= flow_key[127:96];
+            register_file[FLOW_KEY_32]  <= flow_key[31:0];
+            register_file[FLOW_KEY_64]  <= flow_key[63:32];
+            register_file[FLOW_KEY_96]  <= flow_key[95:64];
+            register_file[FLOW_KEY_128] <= flow_key[127:96];
         end
 
         // Write control register
         if (we) begin
             case (waddr[5:2])
-                4'h1:   register_file[`CSR_CTRL] <= wdata;
+                4'h1:   register_file[CSR_CTRL] <= wdata;
                 // Add more RW control registers here
                 default: ; // ignore writes to RO registers
             endcase
@@ -92,20 +92,20 @@ always_ff @(posedge clk or negedge rst_n) begin
             rdone <= 1'b1;
             case (raddr[5:2])
                 4'h1,
-                `DST_MAC_L,
-                `DST_MAC_H,
-                `SRC_MAC_L,
-                `SRC_MAC_H,
-                `ETH_TYPE,
-                `SRC_IP,
-                `DST_IP,
-                `PROTOCOL,
-                `UDP_PORT,
-                `TCP_PORT,
-                `FLOW_KEY_32,
-                `FLOW_KEY_64,
-                `FLOW_KEY_96,
-                `FLOW_KEY_128:
+                DST_MAC_L,
+                DST_MAC_H,
+                SRC_MAC_L,
+                SRC_MAC_H,
+                ETH_TYPE,
+                SRC_IP,
+                DST_IP,
+                PROTOCOL,
+                UDP_PORT,
+                TCP_PORT,
+                FLOW_KEY_32,
+                FLOW_KEY_64,
+                FLOW_KEY_96,
+                FLOW_KEY_128:
                     rdata <= register_file[raddr[5:2]];
                 default:
                     rdata <= 32'hDEADBEEF;
