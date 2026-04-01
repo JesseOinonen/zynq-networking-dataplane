@@ -9,6 +9,7 @@ module ipv4_parser #(
     input  logic                    eth_parser_ready,
     input  logic                    tlast_in,
     input  logic [3:0]              wcnt_eth,
+    input  logic                    in_packet,
     output logic [DATA_WIDTH-1:0]   tdata_out,
     output logic [DATA_WIDTH/8-1:0] tkeep_out,
     output logic                    tvalid_out,
@@ -17,7 +18,8 @@ module ipv4_parser #(
     output logic [31:0]             src_ip,
     output logic [31:0]             dst_ip,
     output logic [7:0]              protocol,
-    output logic [4:0]              wcnt_ipv4
+    output logic [4:0]              wcnt_ipv4,
+    output logic                    in_packet_out
 );
 
 logic [4:0] counter;
@@ -32,16 +34,18 @@ assign ipv4_header_length = (ihl >= 5) ? (ihl << 2) : 6'd20;
 // Pass through the data to UDP/TCP parser
 always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-        tdata_out      <= '0;
-        tkeep_out      <= '0;
-        tvalid_out <= 1'b0;
-        tlast_out  <= 1'b0;
+        tdata_out     <= '0;
+        tkeep_out     <= '0;
+        tvalid_out    <= 1'b0;
+        tlast_out     <= 1'b0;
+        in_packet_out <= 1'b0;
     end
     else begin
-        tdata_out      <= tdata_in;
-        tkeep_out      <= tkeep_in;
-        tvalid_out <= tvalid_in;
-        tlast_out  <= tlast_in;
+        tdata_out     <= tdata_in;
+        tkeep_out     <= tkeep_in;
+        tvalid_out    <= tvalid_in;
+        tlast_out     <= tlast_in;
+        in_packet_out <= in_packet;
     end
 end
 

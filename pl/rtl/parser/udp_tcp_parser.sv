@@ -10,6 +10,7 @@ module udp_tcp_parser #(
     input  logic                    ipv4_parser_ready,
     input  logic [7:0]              protocol,
     input  logic [4:0]              wcnt_ipv4,
+    input  logic                    in_packet,
     output logic                    udp_tcp_parser_ready,
     output logic [15:0]             udp_src_port,
     output logic [15:0]             udp_dst_port,
@@ -110,7 +111,7 @@ always_ff @(posedge clk or negedge rst_n) begin
                 else      udp_counter <= udp_counter + wcnt;
             end
         end
-        if (!tlast_in) begin
+        if (tlast_in && in_packet) begin
             udp_tcp_parser_ready <= 1'b0;
         end
     end

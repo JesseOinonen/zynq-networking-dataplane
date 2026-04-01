@@ -17,7 +17,8 @@ module eth_parser #(
     output logic [47:0]             dst_mac,
     output logic [47:0]             src_mac,
     output logic [15:0]             eth_type,
-    output logic [ 3:0]             wcnt_eth
+    output logic [ 3:0]             wcnt_eth,
+    output logic                    in_packet_out
 );
 
 logic [3:0] counter;
@@ -27,16 +28,18 @@ logic       done;
 // Pass through the data to ipv4 parser
 always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-        tdata_out      <= '0;
-        tkeep_out      <= '0;
-        tvalid_out <= 1'b0;
-        tlast_out  <= 1'b0;
+        tdata_out     <= '0;
+        tkeep_out     <= '0;
+        tvalid_out    <= 1'b0;
+        tlast_out     <= 1'b0;
+        in_packet_out <= 1'b0;
     end
     else begin
-        tdata_out      <= tdata_in;
-        tkeep_out      <= tkeep_in;
-        tvalid_out <= tvalid_in;
-        tlast_out  <= tlast_in;
+        tdata_out     <= tdata_in;
+        tkeep_out     <= tkeep_in;
+        tvalid_out    <= tvalid_in;
+        tlast_out     <= tlast_in;
+        in_packet_out <= in_packet;
     end
 end
 
@@ -77,5 +80,6 @@ always_ff @(posedge clk or negedge rst_n) begin
         end
     end
 end
+
 
 endmodule
