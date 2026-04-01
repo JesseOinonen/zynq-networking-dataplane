@@ -11,7 +11,7 @@ module flow_key_gen (
     input  logic [15:0]             udp_dst_port,
     input  logic [15:0]             tcp_src_port,
     input  logic [15:0]             tcp_dst_port,
-    input  logic                    upd_tcp_parser_ready,
+    input  logic                    udp_tcp_parser_ready,
     output logic [127:0]            flow_key,
     output logic                    valid_flow_key
 );
@@ -65,7 +65,7 @@ always_ff @(posedge clk or negedge rst_n) begin
             ipv4_captured <= 1'b1;
         end
 
-        if (upd_tcp_parser_ready && !udp_tcp_captured) begin
+        if (udp_tcp_parser_ready && !udp_tcp_captured) begin
             if (protocol_capt == 17) begin
                 src_port_capt <= udp_src_port;
                 dst_port_capt <= udp_dst_port;

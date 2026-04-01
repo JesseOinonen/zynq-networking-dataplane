@@ -76,7 +76,7 @@ logic [31:0]                     src_ip_sig;
 logic [31:0]                     dst_ip_sig;
 logic [7:0]                      protocol_sig;
 logic                            ipv4_parser_ready_sig;
-logic                            upd_tcp_parser_ready_sig;
+logic                            udp_tcp_parser_ready_sig;
 logic [15:0]                     udp_src_port_sig;
 logic [15:0]                     udp_dst_port_sig;
 logic [15:0]                     udp_length_sig;
@@ -198,7 +198,7 @@ csr u_csr (
     .src_ip(src_ip_sig),
     .dst_ip(dst_ip_sig),
     .protocol(protocol_sig),
-    .udp_tcp_ready(upd_tcp_parser_ready_sig),
+    .udp_tcp_ready(udp_tcp_parser_ready_sig),
     .udp_src_port(udp_src_port_sig),
     .udp_dst_port(udp_dst_port_sig),
     .tcp_src_port(tcp_src_port_sig),
@@ -241,7 +241,7 @@ flow_key_gen u_flow_key_gen (
     .udp_dst_port(udp_dst_port_sig),
     .tcp_src_port(tcp_src_port_sig),
     .tcp_dst_port(tcp_dst_port_sig),
-    .upd_tcp_parser_ready(upd_tcp_parser_ready_sig),
+    .udp_tcp_parser_ready(udp_tcp_parser_ready_sig),
     .flow_key(flow_key_sig),
     .valid_flow_key(valid_flow_key_sig)
 );
@@ -289,7 +289,7 @@ udp_tcp_parser #(.DATA_WIDTH(DATA_WIDTH)) u_udp_tcp_parser (
     .ipv4_parser_ready(ipv4_parser_ready_sig),
     .protocol(protocol_sig),
     .wcnt_ipv4(wcnt_ipv4_sig),
-    .upd_tcp_parser_ready(upd_tcp_parser_ready_sig),
+    .udp_tcp_parser_ready(udp_tcp_parser_ready_sig),
     .udp_src_port(udp_src_port_sig),
     .udp_dst_port(udp_dst_port_sig),
     .udp_length(udp_length_sig),

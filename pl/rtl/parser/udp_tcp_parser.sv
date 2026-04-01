@@ -10,7 +10,7 @@ module udp_tcp_parser #(
     input  logic                    ipv4_parser_ready,
     input  logic [7:0]              protocol,
     input  logic [4:0]              wcnt_ipv4,
-    output logic                    upd_tcp_parser_ready,
+    output logic                    udp_tcp_parser_ready,
     output logic [15:0]             udp_src_port,
     output logic [15:0]             udp_dst_port,
     output logic [15:0]             udp_length,
@@ -36,7 +36,7 @@ always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         udp_counter          <= '0;
         tcp_counter          <= '0;
-        upd_tcp_parser_ready <= 1'b0;
+        udp_tcp_parser_ready <= 1'b0;
         tcp_src_port         <= '0;
         tcp_dst_port         <= '0;
         tcp_seq_num          <= '0;
@@ -53,7 +53,7 @@ always_ff @(posedge clk or negedge rst_n) begin
     end
     else begin
         if (protocol == 6) begin // TCP
-            if (data_valid_in && ipv4_parser_ready && !upd_tcp_parser_ready) begin
+            if (data_valid_in && ipv4_parser_ready && !udp_tcp_parser_ready) begin
                 wcnt = 0;
                 done = 1'b0;
                 for (int i = 0; i < DATA_WIDTH/8; i++) begin
@@ -75,7 +75,7 @@ always_ff @(posedge clk or negedge rst_n) begin
                         endcase
                         wcnt++;
                         if ((tcp_counter+wcnt) >= 20) begin
-                            upd_tcp_parser_ready <= 1'b1;
+                            udp_tcp_parser_ready <= 1'b1;
                             done = 1'b1;
                             wcnt = 0;
                         end
@@ -86,7 +86,7 @@ always_ff @(posedge clk or negedge rst_n) begin
             end
         end
         else if (protocol == 17) begin // UDP
-            if (data_valid_in && ipv4_parser_ready && !upd_tcp_parser_ready) begin
+            if (data_valid_in && ipv4_parser_ready && !udp_tcp_parser_ready) begin
                 wcnt = 0;
                 done = 1'b0;
                 for (int i = 0; i < DATA_WIDTH/8; i++) begin
@@ -99,8 +99,8 @@ always_ff @(posedge clk or negedge rst_n) begin
                             default: ;
                         endcase
                         wcnt++;
-                        if ((udp_counter+wcnt) >= 8) begin
-                            upd_tcp_parser_ready <= 1'b1;
+                        if (((udp_counter+wcnt) >= 8) && !udp_tcp_parser_ready) begin
+                            udp_tcp_parser_ready <= 1'b1;
                             done = 1'b1;
                             wcnt = 0;
                         end
@@ -111,7 +111,7 @@ always_ff @(posedge clk or negedge rst_n) begin
             end
         end
         if (!last_flag_in) begin
-            upd_tcp_parser_ready <= 1'b0;
+            udp_tcp_parser_ready <= 1'b0;
         end
     end
 end

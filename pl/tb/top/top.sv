@@ -87,7 +87,7 @@ module top;
 
         // Get test name from plusargs, default to axi4_lite
         if (!$value$plusargs("TEST=%s", testname)) begin
-            testname = "flow_table";
+            testname = "parser";
         end
 
         $display("Starting testbench...");
