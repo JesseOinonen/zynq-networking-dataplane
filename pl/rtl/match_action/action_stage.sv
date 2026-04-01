@@ -10,6 +10,9 @@ module action_stage #(
     input  logic [9:0]  waddr,    // AXI4-Lite write address
     input  logic [31:0] wdata,    // AXI4-Lite write data
     input  logic        we,       // AXI4-Lite write enable
+    //input  logic [DATA_WIDTH-1:0] tdata_in,
+    //input  logic               tvalid_in,
+    //input  logic               tlast_in,
     output logic        wdone     // AXI4-Lite write done
     //output logic        trap,
     //output logic [DATA_WIDTH-1:0] tdata_out,

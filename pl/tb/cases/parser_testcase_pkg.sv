@@ -1,4 +1,4 @@
-package axi_rx_testcase_pkg;
+package parser_testcase_pkg;
     `include "../top/register.svh"
 
     //-----------------------------------------
@@ -7,10 +7,10 @@ package axi_rx_testcase_pkg;
     // Send different combinations of tkeep
     // Send different packet sizes
     //-----------------------------------------
-    task axi_rx_testcase(input virtual axi_if axi, output int passed, output int total);
+    task parser_testcase(input virtual axi_if axi, output int passed, output int total);
         logic [31:0] read_data;
         
-        $display("Running axi_rx_testcase...");
+        $display("Running parser_testcase...");
         // Header 1
         // Ethernet Frame:
             // Destination MAC: DA:02:03:04:05:06

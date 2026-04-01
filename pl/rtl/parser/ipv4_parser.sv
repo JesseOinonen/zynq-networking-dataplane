@@ -3,14 +3,14 @@ module ipv4_parser #(
 )(
     input  logic                    clk,
     input  logic                    rst_n,
-    input  logic [$clog2(DATA_WIDTH/8)-1:0] idx_in,
+    input  logic [DATA_WIDTH/8-1:0] tkeep_in,
     input  logic [DATA_WIDTH-1:0]   tdata_in,
     input  logic                    data_valid_in,
     input  logic                    eth_parser_ready,
     input  logic                    last_flag_in,
-    input  logic [3:0]              wcnt_eth,     // Indicates the byte that was left from previous parser
+    input  logic [3:0]              wcnt_eth,
     output logic [DATA_WIDTH-1:0]   tdata_out,
-    output logic [$clog2(DATA_WIDTH/8)-1:0] idx_out,
+    output logic [DATA_WIDTH/8-1:0] tkeep_out,
     output logic                    data_valid_out,
     output logic                    last_flag_out,
     output logic                    ipv4_parser_ready,
@@ -27,20 +27,19 @@ logic [3:0] ihl;
 logic [3:0] version;
 logic [5:0] ipv4_header_length;
 
-
 assign ipv4_header_length = (ihl >= 5) ? (ihl << 2) : 6'd20;
 
-// Pass through the data to UPD/TCP parser
+// Pass through the data to UDP/TCP parser
 always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         tdata_out      <= '0;
-        idx_out        <= '0;
+        tkeep_out      <= '0;
         data_valid_out <= 1'b0;
         last_flag_out  <= 1'b0;
-    end 
+    end
     else begin
         tdata_out      <= tdata_in;
-        idx_out        <= idx_in;
+        tkeep_out      <= tkeep_in;
         data_valid_out <= data_valid_in;
         last_flag_out  <= last_flag_in;
     end
@@ -57,14 +56,14 @@ always_ff @(posedge clk or negedge rst_n) begin
         src_ip            <= '0;
         dst_ip            <= '0;
         wcnt_ipv4         <= '0;
-    end 
+    end
     else begin
         wcnt_ipv4 <= '0;
         if (data_valid_in && eth_parser_ready && !ipv4_parser_ready) begin
             wcnt = 0;
             done = 1'b0;
             for (int i = 0; i < DATA_WIDTH/8; i++) begin
-                if (!done && i >= wcnt_eth && i <= idx_in) begin
+                if (!done && tkeep_in[i] && i >= wcnt_eth) begin
                     if ((counter + wcnt) == 0) begin
                         ihl     <= tdata_in[i*8 +: 4];
                         version <= tdata_in[i*8 + 4 +: 4];
@@ -73,7 +72,6 @@ always_ff @(posedge clk or negedge rst_n) begin
                     else if (((counter + wcnt) > 11) && ((counter + wcnt) < 16)) src_ip[(15-(counter + wcnt))*8 +: 8] <= tdata_in[i*8 +: 8];
                     else if (((counter + wcnt) < 20) && ((counter + wcnt) >= 16)) dst_ip[(19-(counter + wcnt))*8 +: 8] <= tdata_in[i*8 +: 8];
                     wcnt++;
-                    // When ipv4_header_length bytes have been received IPV4 header is complete
                     if ((counter + wcnt) >= ipv4_header_length) begin
                         ipv4_parser_ready <= 1'b1;
                         wcnt_ipv4 <= wcnt;

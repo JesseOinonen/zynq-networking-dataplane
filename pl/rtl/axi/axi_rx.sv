@@ -1,44 +1,64 @@
 module axi_rx #(
-    parameter DATA_WIDTH = 64
+    parameter DATA_WIDTH  = 64,
+    parameter DEPTH       = 256,
+    parameter ALMOST_FULL = DEPTH - 8
 )(
     input  logic                    clk,
     input  logic                    rst_n,
+
+    // Input from MAC/PHY
     input  logic                    tvalid,
     input  logic [DATA_WIDTH-1:0]   tdata,
     input  logic [DATA_WIDTH/8-1:0] tkeep,
     input  logic                    tlast,
     output logic                    tready,
-    output logic [$clog2(DATA_WIDTH/8)-1:0] idx,   // Index of valid bytes
-    output logic [DATA_WIDTH-1:0]   tdata_out,     // AXI-Stream valid data
-    output logic                    data_valid,    // Indicates valid data received
-    output logic                    last_flag      // Indicates last beat of a packet
+
+    // Output to dataplane
+    output logic                    out_tvalid,
+    output logic [DATA_WIDTH-1:0]   out_tdata,
+    output logic [DATA_WIDTH/8-1:0] out_tkeep,
+    output logic                    out_tlast,
+    input  logic                    out_tready
 );
 
-assign tready = 1'b1;
-logic [$clog2(DATA_WIDTH/8+1)-1:0] widx;
+localparam ADDR_W  = $clog2(DEPTH);
+localparam ENTRY_W = DATA_WIDTH + DATA_WIDTH/8 + 1; // tdata + tkeep + tlast
 
-// Data reception logic
+logic [ENTRY_W-1:0] mem [0:DEPTH-1];
+logic [ADDR_W:0]    wr_ptr;
+logic [ADDR_W:0]    rd_ptr;
+logic [ADDR_W:0]    count;
+logic               empty;
+
+assign count  = wr_ptr - rd_ptr;
+assign empty  = (count == '0);
+assign tready = (count < ADDR_W+1'(ALMOST_FULL));
+
+// Write
 always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-        tdata_out  <= '0;
-        idx        <= '0;
-        data_valid <= 1'b0;
-        last_flag  <= 1'b0;
-    end 
-    else begin
-        last_flag <= tlast;
-        data_valid <= 1'b0;
-        if (tvalid && tready) begin
-            widx = 0;
-            for (int beat = 0; beat < DATA_WIDTH/8; beat++) begin
-                if (tkeep[beat]) begin
-                    tdata_out[widx*8 +: 8] <= tdata[beat*8 +: 8];
-                    widx++;
-                end
-            end
-            data_valid <= 1'b1;
-            if (widx != 0) idx <= widx - 1;
-            else idx <= widx;
+        wr_ptr <= '0;
+    end else if (tvalid && tready) begin
+        mem[wr_ptr[ADDR_W-1:0]] <= {tlast, tkeep, tdata};
+        wr_ptr <= wr_ptr + 1;
+    end
+end
+
+// Read
+always_ff @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+        rd_ptr     <= '0;
+        out_tvalid <= 1'b0;
+        out_tdata  <= '0;
+        out_tkeep  <= '0;
+        out_tlast  <= 1'b0;
+    end else begin
+        if (!empty && out_tready) begin
+            {out_tlast, out_tkeep, out_tdata} <= mem[rd_ptr[ADDR_W-1:0]];
+            out_tvalid <= 1'b1;
+            rd_ptr     <= rd_ptr + 1;
+        end else if (out_tready) begin
+            out_tvalid <= 1'b0;
         end
     end
 end

@@ -1,6 +1,6 @@
 // Testcases
 import axi4_lite_testcase_pkg::*;
-import axi_rx_testcase_pkg::*;
+import parser_testcase_pkg::*;
 import flow_key_gen_testcase_pkg::*;
 import flow_table_testcase_pkg::*;
 import action_stage_testcase_pkg::*;
@@ -57,7 +57,7 @@ module top;
         total  = 0;
 
         if      (name == "axi4_lite")    axi4_lite_testcase(tb_axi, passed, total);
-        else if (name == "axi_rx")       axi_rx_testcase(tb_axi, passed, total);
+        else if (name == "parser")       parser_testcase(tb_axi, passed, total);
         else if (name == "flow_key_gen") flow_key_gen_testcase(tb_axi, passed, total);
         else if (name == "flow_table")   flow_table_testcase(tb_axi, passed, total);
         else if (name == "action_stage") action_stage_testcase(tb_axi, passed, total);

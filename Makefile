@@ -8,7 +8,7 @@ SIM_DIR := $(BUILD)/$(PROJECT).sim/sim_1/behav/xsim
 SCRIPTS_DIR := ../../scripts
 
 TEST ?= axi4_lite
-TESTS := axi4_lite axi_rx flow_key_gen flow_table action_stage
+TESTS := axi4_lite parser flow_key_gen flow_table action_stage
 
 .PHONY: all build sim regression gui clean
 

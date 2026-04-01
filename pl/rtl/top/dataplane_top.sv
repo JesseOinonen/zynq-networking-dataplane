@@ -57,17 +57,17 @@ logic [9:0]                      waddr_act_sig;
 logic [31:0]                     wdata_act_sig;
 logic                            we_act_sig;
 logic                            eth_parser_ready_sig;
-logic [$clog2(DATA_WIDTH/8)-1:0] idx_sig;
-logic [DATA_WIDTH-1:0]           tdata_sig;
-logic                            last_flag_sig;
-logic                            data_valid_sig;
+logic                            rx_tvalid_sig;
+logic [DATA_WIDTH-1:0]           rx_tdata_sig;
+logic [DATA_WIDTH/8-1:0]        rx_tkeep_sig;
+logic                            rx_tlast_sig;
 logic [DATA_WIDTH-1:0]           tdata_eth_sig;
+logic [DATA_WIDTH/8-1:0]        tkeep_eth_sig;
 logic                            data_valid_eth_sig;
-logic [$clog2(DATA_WIDTH/8)-1:0] idx_eth_sig;
 logic                            last_flag_eth_sig;
 logic [DATA_WIDTH-1:0]           tdata_ipv4_sig;
+logic [DATA_WIDTH/8-1:0]        tkeep_ipv4_sig;
 logic                            data_valid_ipv4_sig;
-logic [$clog2(DATA_WIDTH/8)-1:0] idx_ipv4_sig;
 logic                            last_flag_ipv4_sig;
 logic [47:0]                     dst_mac_sig;
 logic [47:0]                     src_mac_sig;
@@ -175,10 +175,11 @@ axi_rx #(.DATA_WIDTH(DATA_WIDTH)) u_axi_rx (
     .tkeep(tkeep),
     .tlast(tlast),
     .tready(tready),
-    .idx(idx_sig),
-    .tdata_out(tdata_sig),
-    .data_valid(data_valid_sig),
-    .last_flag(last_flag_sig)
+    .out_tvalid(rx_tvalid_sig),
+    .out_tdata(rx_tdata_sig),
+    .out_tkeep(rx_tkeep_sig),
+    .out_tlast(rx_tlast_sig),
+    .out_tready(1'b1)
 );
 
 csr u_csr (
@@ -212,12 +213,12 @@ csr u_csr (
 eth_parser #(.DATA_WIDTH(DATA_WIDTH)) u_eth_parser (
     .clk(clk125),
     .rst_n(rst_n),
-    .idx_in(idx_sig),
-    .tdata_in(tdata_sig),
-    .data_valid_in(data_valid_sig),
-    .last_flag_in(last_flag_sig),
+    .tkeep_in(rx_tkeep_sig),
+    .tdata_in(rx_tdata_sig),
+    .data_valid_in(rx_tvalid_sig),
+    .last_flag_in(rx_tlast_sig),
     .tdata_out(tdata_eth_sig),
-    .idx_out(idx_eth_sig),
+    .tkeep_out(tkeep_eth_sig),
     .data_valid_out(data_valid_eth_sig),
     .last_flag_out(last_flag_eth_sig),
     .eth_parser_ready(eth_parser_ready_sig),
@@ -261,14 +262,14 @@ flow_table u_flow_table (
 ipv4_parser #(.DATA_WIDTH(DATA_WIDTH)) u_ipv4_parser (
     .clk(clk125),
     .rst_n(rst_n),
-    .idx_in(idx_eth_sig),
+    .tkeep_in(tkeep_eth_sig),
     .tdata_in(tdata_eth_sig),
     .data_valid_in(data_valid_eth_sig),
     .eth_parser_ready(eth_parser_ready_sig),
     .last_flag_in(last_flag_eth_sig),
     .wcnt_eth(wcnt_eth_sig),
     .tdata_out(tdata_ipv4_sig),
-    .idx_out(idx_ipv4_sig),
+    .tkeep_out(tkeep_ipv4_sig),
     .data_valid_out(data_valid_ipv4_sig),
     .last_flag_out(last_flag_ipv4_sig),
     .ipv4_parser_ready(ipv4_parser_ready_sig),
@@ -281,7 +282,7 @@ ipv4_parser #(.DATA_WIDTH(DATA_WIDTH)) u_ipv4_parser (
 udp_tcp_parser #(.DATA_WIDTH(DATA_WIDTH)) u_udp_tcp_parser (
     .clk(clk125),
     .rst_n(rst_n),
-    .idx_in(idx_ipv4_sig),
+    .tkeep_in(tkeep_ipv4_sig),
     .last_flag_in(last_flag_ipv4_sig),
     .tdata_in(tdata_ipv4_sig),
     .data_valid_in(data_valid_ipv4_sig),
