@@ -5,12 +5,14 @@ module eth_parser #(
     input  logic                    rst_n,
     input  logic [DATA_WIDTH/8-1:0] tkeep_in,
     input  logic [DATA_WIDTH-1:0]   tdata_in,
-    input  logic                    data_valid_in,
-    input  logic                    last_flag_in,
+    input  logic                    tvalid_in,
+    input  logic                    tlast_in,
+    input  logic                    sop,
+    input  logic                    in_packet,
     output logic [DATA_WIDTH-1:0]   tdata_out,
     output logic [DATA_WIDTH/8-1:0] tkeep_out,
-    output logic                    data_valid_out,
-    output logic                    last_flag_out,
+    output logic                    tvalid_out,
+    output logic                    tlast_out,
     output logic                    eth_parser_ready,
     output logic [47:0]             dst_mac,
     output logic [47:0]             src_mac,
@@ -21,38 +23,20 @@ module eth_parser #(
 logic [3:0] counter;
 logic [3:0] wcnt;
 logic       done;
-logic       sop;
-logic       in_packet;
-
-// Packet state tracking
-always_ff @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
-        in_packet <= 1'b0;
-    end
-    else if (data_valid_in) begin
-        if (last_flag_in)
-            in_packet <= 1'b0;
-        else
-            in_packet <= 1'b1;
-    end
-end
-
-// SOP = first valid beat when not already in packet
-assign sop = data_valid_in && !in_packet;
 
 // Pass through the data to ipv4 parser
 always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         tdata_out      <= '0;
         tkeep_out      <= '0;
-        data_valid_out <= 1'b0;
-        last_flag_out  <= 1'b0;
+        tvalid_out <= 1'b0;
+        tlast_out  <= 1'b0;
     end
     else begin
         tdata_out      <= tdata_in;
         tkeep_out      <= tkeep_in;
-        data_valid_out <= data_valid_in;
-        last_flag_out  <= last_flag_in;
+        tvalid_out <= tvalid_in;
+        tlast_out  <= tlast_in;
     end
 end
 
@@ -68,7 +52,7 @@ always_ff @(posedge clk or negedge rst_n) begin
     end
     else begin
         wcnt_eth <= '0;
-        if (data_valid_in && !eth_parser_ready) begin
+        if (tvalid_in && !eth_parser_ready) begin
             wcnt = 0;
             done = 1'b0;
             for (int i = 0; i < DATA_WIDTH/8; i++) begin

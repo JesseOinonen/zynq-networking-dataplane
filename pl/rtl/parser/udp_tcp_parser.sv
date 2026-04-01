@@ -4,9 +4,9 @@ module udp_tcp_parser #(
     input  logic                    clk,
     input  logic                    rst_n,
     input  logic [DATA_WIDTH/8-1:0] tkeep_in,
-    input  logic                    last_flag_in,
+    input  logic                    tlast_in,
     input  logic [DATA_WIDTH-1:0]   tdata_in,
-    input  logic                    data_valid_in,
+    input  logic                    tvalid_in,
     input  logic                    ipv4_parser_ready,
     input  logic [7:0]              protocol,
     input  logic [4:0]              wcnt_ipv4,
@@ -53,7 +53,7 @@ always_ff @(posedge clk or negedge rst_n) begin
     end
     else begin
         if (protocol == 6) begin // TCP
-            if (data_valid_in && ipv4_parser_ready && !udp_tcp_parser_ready) begin
+            if (tvalid_in && ipv4_parser_ready && !udp_tcp_parser_ready) begin
                 wcnt = 0;
                 done = 1'b0;
                 for (int i = 0; i < DATA_WIDTH/8; i++) begin
@@ -86,7 +86,7 @@ always_ff @(posedge clk or negedge rst_n) begin
             end
         end
         else if (protocol == 17) begin // UDP
-            if (data_valid_in && ipv4_parser_ready && !udp_tcp_parser_ready) begin
+            if (tvalid_in && ipv4_parser_ready && !udp_tcp_parser_ready) begin
                 wcnt = 0;
                 done = 1'b0;
                 for (int i = 0; i < DATA_WIDTH/8; i++) begin
@@ -110,7 +110,7 @@ always_ff @(posedge clk or negedge rst_n) begin
                 else      udp_counter <= udp_counter + wcnt;
             end
         end
-        if (!last_flag_in) begin
+        if (!tlast_in) begin
             udp_tcp_parser_ready <= 1'b0;
         end
     end

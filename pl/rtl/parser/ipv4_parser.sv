@@ -5,14 +5,14 @@ module ipv4_parser #(
     input  logic                    rst_n,
     input  logic [DATA_WIDTH/8-1:0] tkeep_in,
     input  logic [DATA_WIDTH-1:0]   tdata_in,
-    input  logic                    data_valid_in,
+    input  logic                    tvalid_in,
     input  logic                    eth_parser_ready,
-    input  logic                    last_flag_in,
+    input  logic                    tlast_in,
     input  logic [3:0]              wcnt_eth,
     output logic [DATA_WIDTH-1:0]   tdata_out,
     output logic [DATA_WIDTH/8-1:0] tkeep_out,
-    output logic                    data_valid_out,
-    output logic                    last_flag_out,
+    output logic                    tvalid_out,
+    output logic                    tlast_out,
     output logic                    ipv4_parser_ready,
     output logic [31:0]             src_ip,
     output logic [31:0]             dst_ip,
@@ -34,14 +34,14 @@ always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         tdata_out      <= '0;
         tkeep_out      <= '0;
-        data_valid_out <= 1'b0;
-        last_flag_out  <= 1'b0;
+        tvalid_out <= 1'b0;
+        tlast_out  <= 1'b0;
     end
     else begin
         tdata_out      <= tdata_in;
         tkeep_out      <= tkeep_in;
-        data_valid_out <= data_valid_in;
-        last_flag_out  <= last_flag_in;
+        tvalid_out <= tvalid_in;
+        tlast_out  <= tlast_in;
     end
 end
 
@@ -59,7 +59,7 @@ always_ff @(posedge clk or negedge rst_n) begin
     end
     else begin
         wcnt_ipv4 <= '0;
-        if (data_valid_in && eth_parser_ready && !ipv4_parser_ready) begin
+        if (tvalid_in && eth_parser_ready && !ipv4_parser_ready) begin
             wcnt = 0;
             done = 1'b0;
             for (int i = 0; i < DATA_WIDTH/8; i++) begin

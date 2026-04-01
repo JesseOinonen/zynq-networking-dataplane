@@ -14,11 +14,13 @@ module axi_rx #(
     output logic                    tready,
 
     // Output to dataplane
+    input  logic                    out_tready,
     output logic                    out_tvalid,
     output logic [DATA_WIDTH-1:0]   out_tdata,
     output logic [DATA_WIDTH/8-1:0] out_tkeep,
     output logic                    out_tlast,
-    input  logic                    out_tready
+    output logic                    sop, // Start of Packet
+    output logic                    in_packet // Indicates if currently receiving a packet
 );
 
 localparam ADDR_W  = $clog2(DEPTH);
@@ -33,6 +35,22 @@ logic               empty;
 assign count  = wr_ptr - rd_ptr;
 assign empty  = (count == '0);
 assign tready = (count < ADDR_W+1'(ALMOST_FULL));
+
+// Packet state tracking
+always_ff @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+        in_packet <= 1'b0;
+    end
+    else if (tvalid) begin
+        if (tlast)
+            in_packet <= 1'b0;
+        else
+            in_packet <= 1'b1;
+    end
+end
+
+// SOP = first valid beat when not already in packet
+assign sop = tvalid && !in_packet;
 
 // Write
 always_ff @(posedge clk or negedge rst_n) begin
