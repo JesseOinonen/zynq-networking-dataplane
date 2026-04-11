@@ -95,7 +95,6 @@ always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         ARREADY <= 1'b1;
         RVALID  <= 1'b0;
-        BVALID  <= 1'b0;
         RRESP   <= 2'b00;
         RDATA   <= 32'b0;
         re      <= 1'b0;

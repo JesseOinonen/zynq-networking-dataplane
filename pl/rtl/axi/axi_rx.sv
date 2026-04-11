@@ -41,7 +41,7 @@ always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         in_packet <= 1'b0;
     end
-    else if (tvalid) begin
+    else if (tvalid && tready) begin
         if (tlast)
             in_packet <= 1'b0;
         else
