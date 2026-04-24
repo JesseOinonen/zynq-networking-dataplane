@@ -49,7 +49,7 @@ logic [31:0]                     rdata_csr_sig;
 logic                            rdone_csr_sig;
 logic                            wdone_csr_sig;
 logic                            wdone_flow_sig;
-logic [7:0]                      waddr_flow_sig;
+logic [9:0]                      waddr_flow_sig;
 logic [31:0]                     wdata_flow_sig;
 logic                            we_flow_sig;
 logic                            wdone_act_sig;
@@ -100,6 +100,10 @@ logic                            sop_sig;
 logic                            in_packet_sig;
 logic                            in_packet_eth_sig;
 logic                            in_packet_ipv4_sig;
+logic                            tvalid_udp_tcp_sig;
+logic [DATA_WIDTH-1:0]           tdata_udp_tcp_sig;
+logic [DATA_WIDTH/8-1:0]         tkeep_udp_tcp_sig;
+logic                            tlast_udp_tcp_sig;
 
 action_stage #(.DATA_WIDTH(DATA_WIDTH)) u_action_stage (
     .clk(clk125),
@@ -109,7 +113,16 @@ action_stage #(.DATA_WIDTH(DATA_WIDTH)) u_action_stage (
     .waddr(waddr_act_sig),
     .wdata(wdata_act_sig),
     .we(we_act_sig),
-    .wdone(wdone_act_sig)
+    .wdone(wdone_act_sig),
+    .tvalid_in(tvalid_flow_table_sig),
+    .tdata_in(tdata_flow_table_sig),
+    .tkeep_in(tkeep_flow_table_sig),
+    .tlast_in(tlast_flow_table_sig),
+    .tvalid_out(), // --- TBD ---
+    .tdata_out(),  // --- TBD ---
+    .tkeep_out(),  // --- TBD ---
+    .tlast_out()   // --- TBD ---
+
 );
 
 axi_addr_decode u_axi_addr_decode (
@@ -252,7 +265,15 @@ flow_key_gen u_flow_key_gen (
     .tcp_dst_port(tcp_dst_port_sig),
     .udp_tcp_parser_ready(udp_tcp_parser_ready_sig),
     .flow_key(flow_key_sig),
-    .valid_flow_key(valid_flow_key_sig)
+    .valid_flow_key(valid_flow_key_sig),
+    .tvalid_in(tvalid_udp_tcp_sig),
+    .tdata_in(tdata_udp_tcp_sig),
+    .tkeep_in(tkeep_udp_tcp_sig),
+    .tlast_in(tlast_udp_tcp_sig)
+    .tvalid_out(tvalid_flow_key_sig),
+    .tdata_out(tdata_flow_key_sig),
+    .tkeep_out(tkeep_flow_key_sig),
+    .tlast_out(tlast_flow_key_sig)
 );
 
 flow_table u_flow_table (
@@ -265,7 +286,15 @@ flow_table u_flow_table (
     .we(we_flow_sig),
     .flow_hit(flow_hit_sig),
     .flow_id(flow_id_sig),
-    .wdone(wdone_flow_sig)
+    .wdone(wdone_flow_sig),
+    .tvalid_in(tvalid_flow_key_sig),
+    .tdata_in(tdata_flow_key_sig),
+    .tkeep_in(tkeep_flow_key_sig),
+    .tlast_in(tlast_flow_key_sig)
+    .tvalid_out(tvalid_flow_table_sig),
+    .tdata_out(tdata_flow_table_sig),
+    .tkeep_out(tkeep_flow_table_sig),
+    .tlast_out(tlast_flow_table_sig)
 );
 
 ipv4_parser #(.DATA_WIDTH(DATA_WIDTH)) u_ipv4_parser (
@@ -314,7 +343,11 @@ udp_tcp_parser #(.DATA_WIDTH(DATA_WIDTH)) u_udp_tcp_parser (
     .tcp_flags(tcp_flags_sig),
     .tcp_window_size(tcp_window_size_sig),
     .tcp_checksum(tcp_checksum_sig),
-    .tcp_urgent_pointer(tcp_urgent_pointer_sig)
+    .tcp_urgent_pointer(tcp_urgent_pointer_sig),
+    .tvalid_out(tvalid_udp_tcp_sig),
+    .tdata_out(tdata_udp_tcp_sig),
+    .tkeep_out(tkeep_udp_tcp_sig),
+    .tlast_out(tlast_udp_tcp_sig)
 );
 
 endmodule

@@ -13,7 +13,16 @@ module flow_key_gen (
     input  logic [15:0]             tcp_dst_port,
     input  logic                    udp_tcp_parser_ready,
     output logic [127:0]            flow_key,
-    output logic                    valid_flow_key
+    output logic                    valid_flow_key,
+    // AXI stream signals pass through
+    input  logic                    tvalid_in,
+    input  logic [DATA_WIDTH-1:0]   tdata_in,
+    input  logic [DATA_WIDTH/8-1:0] tkeep_in,
+    input  logic                    tlast_in,
+    output logic                    tvalid_out,
+    output logic [DATA_WIDTH-1:0]   tdata_out,
+    output logic [DATA_WIDTH/8-1:0] tkeep_out,
+    output logic                    tlast_out
 );
 
 logic        eth_captured;
@@ -29,6 +38,21 @@ logic [15:0] dst_port_capt;
 
 // Generate flow key once all of the parsers are finished and eth_type is IPv4
 assign gen_flow_key = eth_captured && (eth_type_capt == 16'h0800) && ipv4_captured && udp_tcp_captured;
+
+always_ff @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+        tvalid_out <= 1'b0;
+        tdata_out  <= '0;
+        tkeep_out  <= '0;
+        tlast_out  <= 1'b0;
+    end
+    else begin
+        tvalid_out <= tvalid_in;
+        tdata_out  <= tdata_in;
+        tkeep_out  <= tkeep_in;
+        tlast_out  <= tlast_in;
+    end
+end
 
 always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
@@ -78,11 +102,12 @@ always_ff @(posedge clk or negedge rst_n) begin
         end
 
         if (gen_flow_key) begin
-            flow_key <= {24'h0,
-                        src_ip_capt, 
-                        dst_ip_capt, 
-                        src_port_capt, 
-                        dst_port_capt, 
+            flow_key <= {8'h0,
+                        eth_type_capt,
+                        src_ip_capt,
+                        dst_ip_capt,
+                        src_port_capt,
+                        dst_port_capt,
                         protocol_capt};
             valid_flow_key   <= 1'b1;
             eth_captured     <= 1'b0;

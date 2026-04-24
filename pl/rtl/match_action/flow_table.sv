@@ -1,19 +1,29 @@
 import dataplane_pkg::*;
 
 module flow_table (
-    input  logic         clk,
-    input  logic         rst_n,
-    input  logic [127:0] flow_key,
-    input  logic         flow_key_valid,
-    input  logic [7:0]   waddr,           // AXI4-Lite write address
-    input  logic [31:0]  wdata,           // AXI4-Lite write data
-    input  logic         we,              // AXI4-Lite write enable
-    output logic         flow_hit,        // Flow table hit
-    output logic [9:0]   flow_id,         // Flow id from flow table
-    output logic         wdone            // AXI4-Lite write done 
+    input  logic                    clk,
+    input  logic                    rst_n,
+    input  logic [127:0]            flow_key,
+    input  logic                    flow_key_valid,
+    input  logic [9:0]              waddr,           // AXI4-Lite write address
+    input  logic [31:0]             wdata,           // AXI4-Lite write data
+    input  logic                    we,              // AXI4-Lite write enable
+    output logic                    flow_hit,        // Flow table hit
+    output logic [9:0]              flow_id,         // Flow id from flow table
+    output logic                    wdone,           // AXI4-Lite write done 
+    // AXI stream signals for action stage
+    input  logic                    tvalid_in,
+    input  logic [DATA_WIDTH-1:0]   tdata_in,
+    input  logic [DATA_WIDTH/8-1:0] tkeep_in,
+    input  logic                    tlast_in,
+    output logic                    tvalid_out,
+    output logic [DATA_WIDTH-1:0]   tdata_out,
+    output logic [DATA_WIDTH/8-1:0] tkeep_out,
+    output logic                    tlast_out
 );
 
 logic [15:0] hash;
+logic [9:0]  hash_idx;
 logic [2:0]  wr_cnt;
 logic        flow_table_rdy;
 
@@ -26,13 +36,30 @@ typedef struct packed {
 flow_entry_t wr_entry_tmp;
 
 // BRAM Flow Table
-(* ram_style = "block" *) flow_entry_t flow_table [0:255];
+(* ram_style = "block" *) flow_entry_t flow_table [0:1023];
 
 flow_entry_t  rd_entry;
-logic [7:0]   addr;
+logic [9:0]   addr;
 logic [127:0] flow_key_d;
 
-assign hash = flow_key[15:0] ^ flow_key[31:16] ^ flow_key[47:32] ^ flow_key[63:48];
+assign hash     = flow_key[15:0]   ^ flow_key[31:16]  ^ flow_key[47:32]  ^ flow_key[63:48]
+                ^ flow_key[79:64]  ^ flow_key[95:80]  ^ flow_key[111:96] ^ flow_key[127:112];
+assign hash_idx = hash[9:0] ^ {4'b0, hash[15:10]};
+
+always_ff @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+        tvalid_out <= 1'b0;
+        tdata_out  <= '0;
+        tkeep_out  <= '0;
+        tlast_out  <= 1'b0;
+    end
+    else begin
+        tvalid_out <= tvalid_in;
+        tdata_out  <= tdata_in;
+        tkeep_out  <= tkeep_in;
+        tlast_out  <= tlast_in;
+    end
+end
 
 always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
@@ -44,7 +71,7 @@ always_ff @(posedge clk or negedge rst_n) begin
     end
     else begin
         if (flow_key_valid) begin
-            addr       <= hash[7:0];
+            addr       <= hash_idx;
             flow_key_d <= flow_key;
         end
 
@@ -61,7 +88,7 @@ always_ff @(posedge clk or negedge rst_n) begin
         wdone          <= 1'b0;
         wr_entry_tmp   <= '0;
         flow_table_rdy <= 1'b0;
-        for (int i = 0; i < 256; i++) begin
+        for (int i = 0; i < 1024; i++) begin
             flow_table[i] <= '0;
         end
     end

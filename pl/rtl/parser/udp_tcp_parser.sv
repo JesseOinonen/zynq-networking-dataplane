@@ -3,14 +3,17 @@ module udp_tcp_parser #(
 )(
     input  logic                    clk,
     input  logic                    rst_n,
+    // AXI stream inputs
     input  logic [DATA_WIDTH/8-1:0] tkeep_in,
     input  logic                    tlast_in,
     input  logic [DATA_WIDTH-1:0]   tdata_in,
     input  logic                    tvalid_in,
+    // Control signals from previous parsers
     input  logic                    ipv4_parser_ready,
     input  logic [7:0]              protocol,
     input  logic [4:0]              wcnt_ipv4,
     input  logic                    in_packet,
+    // UDP/TCP header outputs
     output logic                    udp_tcp_parser_ready,
     output logic [15:0]             udp_src_port,
     output logic [15:0]             udp_dst_port,
@@ -24,13 +27,34 @@ module udp_tcp_parser #(
     output logic [5:0]              tcp_flags,
     output logic [15:0]             tcp_window_size,
     output logic [15:0]             tcp_checksum,
-    output logic [15:0]             tcp_urgent_pointer
+    output logic [15:0]             tcp_urgent_pointer,
+    // AXI stream outputs (pass through)
+    output logic                    tvalid_out,
+    output logic [DATA_WIDTH-1:0]   tdata_out,
+    output logic [DATA_WIDTH/8-1:0] tkeep_out,
+    output logic                    tlast_out
 );
 
 logic [2:0] udp_counter;
 logic [4:0] tcp_counter;
 logic [4:0] wcnt;
 logic       done;
+
+// Pass through AXI stream signals
+always_ff @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+        tvalid_out <= 1'b0;
+        tdata_out  <= '0;
+        tkeep_out  <= '0;
+        tlast_out  <= 1'b0;
+    end
+    else begin
+        tvalid_out <= tvalid_in;
+        tdata_out  <= tdata_in;
+        tkeep_out  <= tkeep_in;
+        tlast_out  <= tlast_in;
+    end
+end
 
 // UDP/TCP header parsing
 always_ff @(posedge clk or negedge rst_n) begin

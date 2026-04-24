@@ -10,21 +10,18 @@ module action_stage #(
     input  logic [9:0]  waddr,    // AXI4-Lite write address
     input  logic [31:0] wdata,    // AXI4-Lite write data
     input  logic        we,       // AXI4-Lite write enable
-    //input  logic [DATA_WIDTH-1:0] tdata_in,
-    //input  logic               tvalid_in,
-    //input  logic               tlast_in,
-    output logic        wdone     // AXI4-Lite write done
-    //output logic        trap,
+    output logic        wdone,    // AXI4-Lite write done
+    output logic        trap,
+    // AXI stream signals
+    input  logic [DATA_WIDTH-1:0]   tdata_in,
+    input  logic                    tvalid_in,
+    input  logic                    tlast_in,
+    input  logic [DATA_WIDTH/8-1:0] tkeep_in,
     //output logic [DATA_WIDTH-1:0] tdata_out,
     //output logic        tvalid_out,
-    //output logic        tlast_out
+    //output logic        tlast_out,
+    //output logic [DATA_WIDTH/8-1:0] tkeep_out
 );
-
-// TEMP, should be outputs and get pipelined from parser stage !!!!!!!!!!!
-logic trap;
-logic [DATA_WIDTH-1:0] tdata_out;
-logic tvalid_out;
-logic tlast_out;
 
 logic [2:0] axi_w_counter;
 logic [9:0] waddr_ff; // Registered address for modify action check
