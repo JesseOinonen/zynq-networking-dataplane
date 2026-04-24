@@ -1,4 +1,6 @@
-module flow_key_gen (
+module flow_key_gen #(
+    parameter DATA_WIDTH = 64
+)(
     input  logic                    clk,
     input  logic                    rst_n,
     input  logic [15:0]             eth_type,

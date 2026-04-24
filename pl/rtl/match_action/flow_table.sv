@@ -1,6 +1,8 @@
 import dataplane_pkg::*;
 
-module flow_table (
+module flow_table #(
+    parameter DATA_WIDTH = 64
+)(
     input  logic                    clk,
     input  logic                    rst_n,
     input  logic [127:0]            flow_key,
