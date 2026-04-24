@@ -269,7 +269,7 @@ flow_key_gen u_flow_key_gen (
     .tvalid_in(tvalid_udp_tcp_sig),
     .tdata_in(tdata_udp_tcp_sig),
     .tkeep_in(tkeep_udp_tcp_sig),
-    .tlast_in(tlast_udp_tcp_sig)
+    .tlast_in(tlast_udp_tcp_sig),
     .tvalid_out(tvalid_flow_key_sig),
     .tdata_out(tdata_flow_key_sig),
     .tkeep_out(tkeep_flow_key_sig),
@@ -290,7 +290,7 @@ flow_table u_flow_table (
     .tvalid_in(tvalid_flow_key_sig),
     .tdata_in(tdata_flow_key_sig),
     .tkeep_in(tkeep_flow_key_sig),
-    .tlast_in(tlast_flow_key_sig)
+    .tlast_in(tlast_flow_key_sig),
     .tvalid_out(tvalid_flow_table_sig),
     .tdata_out(tdata_flow_table_sig),
     .tkeep_out(tkeep_flow_table_sig),
