@@ -12,7 +12,7 @@ module top;
         .rst_n(rst_n)
     );
 
-    clk_gen50MHz u_clk_gen50MHz (
+    clk_gen50MHz u_clk_gen125MHz (
         .clk(clk)
     );
 

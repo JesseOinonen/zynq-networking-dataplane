@@ -1,7 +1,7 @@
-module clk_gen50MHz (output logic clk);
+module clk_gen125MHz (output logic clk);
     initial begin
         clk = 0;
-        forever #10ns clk = ~clk; // 50 MHz clock
+        forever #8ns clk = ~clk; // 125 MHz clock
     end
 endmodule
 
