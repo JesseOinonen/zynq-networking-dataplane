@@ -1,17 +1,12 @@
-// Testcases
-import axi4_lite_testcase_pkg::*;
-import parser_testcase_pkg::*;
-import flow_key_gen_testcase_pkg::*;
-import flow_table_testcase_pkg::*;
-import action_stage_testcase_pkg::*;
+import uvm_pkg::*;
+import dp_pkg::*;
+`include "uvm_macros.svh"
 
 `timescale 1ns/1ps
 
-module top; 
+module top;
     logic clk;
     logic rst_n;
-    int   passed;
-    int   total;
 
     rst_gen u_rst_gen (
         .rst_n(rst_n)
@@ -52,28 +47,13 @@ module top;
         .tready (tb_axi.tready)
     );
 
-    task automatic run_test(string name, output int passed, output int total);
-        passed = 0;
-        total  = 0;
-
-        if      (name == "axi4_lite")    axi4_lite_testcase(tb_axi, passed, total);
-        else if (name == "parser")       parser_testcase(tb_axi, passed, total);
-        else if (name == "flow_key_gen") flow_key_gen_testcase(tb_axi, passed, total);
-        else if (name == "flow_table")   flow_table_testcase(tb_axi, passed, total);
-        else if (name == "action_stage") action_stage_testcase(tb_axi, passed, total);
-        else    $fatal(1, "Unknown test '%s'", name);
-
-    endtask
-
     initial begin
-        string testname;
-
-        tb_axi.AWADDR  = '0; 
+        tb_axi.AWADDR  = '0;
         tb_axi.WDATA   = '0;
         tb_axi.ARADDR  = '0;
         tb_axi.AWVALID = 0;
         tb_axi.WVALID  = 0;
-        tb_axi.ARVALID = 0; 
+        tb_axi.ARVALID = 0;
         tb_axi.RREADY  = 0;
         tb_axi.BREADY  = 0;
         tb_axi.ARREADY = 0;
@@ -85,25 +65,10 @@ module top;
         tb_axi.tkeep   = '0;
         tb_axi.tlast   = 0;
 
-        // Get test name from plusargs, default to axi4_lite
-        if (!$value$plusargs("TEST=%s", testname)) begin
-            testname = "parser";
-        end
+        uvm_config_db#(virtual axi_if)::set(null, "uvm_test_top", "axi_vif", tb_axi);
 
-        $display("Starting testbench...");
-        wait (rst_n == 1);
-        $display("Rst detected...");
-
-        $display("Starting testbench... TEST=%s", testname);
-
-        run_test(testname, passed, total);
-
-        $display("RESULT: %0d / %0d PASSED (TEST=%s)", passed, total, testname);
-
-        #1us;
-
-        if (passed != total) $fatal(1, "TEST FAILED");
-        else $finish;
+        // Run test, the test is selected with +UVM_TESTNAME=<name> plusarg
+        run_test();
     end
     
 endmodule

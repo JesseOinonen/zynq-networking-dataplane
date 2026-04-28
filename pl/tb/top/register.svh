@@ -16,3 +16,9 @@
 `define CSR_FLOW_KEY_64    6'h34  // flow_key [63:32]
 `define CSR_FLOW_KEY_96    6'h38  // flow_key [95:64]
 `define CSR_FLOW_KEY_128   6'h3C  // flow_key [127:96]
+
+// Flow table write port (FIFO-like, write 5 words: key[127:0] + metadata)
+`define CSR_FLOW_TABLE_WDATA  32'h8000A00C
+
+// Action stage control
+`define CSR_ACTION_CTRL       32'h4003FFFC

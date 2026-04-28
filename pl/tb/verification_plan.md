@@ -1,6 +1,5 @@
 # Verification Plan
 
-# Create UVM test environment for all of the tests
 # Consider adding SymbiYosys for formal verification
 
 ## axi_rx

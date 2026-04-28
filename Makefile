@@ -5,10 +5,10 @@ PROJECT := dataplane
 BUILD := vivado/build/$(PROJECT)
 XPR := $(BUILD)/$(PROJECT).xpr
 SIM_DIR := $(BUILD)/$(PROJECT).sim/sim_1/behav/xsim
-SCRIPTS_DIR := ../../scripts
+SCRIPTS_DIR := ../../../flow/scripts
 
-TEST ?= axi4_lite
-TESTS := axi4_lite parser flow_key_gen flow_table action_stage
+TEST ?= axi4_lite_test
+TESTS := axi4_lite_test parser_test flow_key_gen_test flow_table_test action_stage_test
 
 .PHONY: all build sim regression gui clean
 
@@ -36,7 +36,7 @@ sim: build
 	  echo "Simulation build not found, compiling..."; \
 	  cd $(BUILD) && $(VIVADO) -mode batch -source $(SCRIPTS_DIR)/compile.tcl; \
 	fi
-	@cd $(SIM_DIR) && $(XSIM) top_behav -R --testplusarg "TEST=$(TEST)"
+	@cd $(SIM_DIR) && $(XSIM) top_behav -R --testplusarg "UVM_TESTNAME=$(TEST)"
 	@echo "Test $(TEST) completed"
 
 # Run regression: build once, then run each test
@@ -56,7 +56,7 @@ regression: build
 	for t in $(TESTS); do \
 	  echo ""; \
 	  echo ">>> Running test: $$t"; \
-	  if cd $(SIM_DIR) && $(XSIM) top_behav -R --testplusarg "TEST=$$t"; then \
+	  if cd $(SIM_DIR) && $(XSIM) top_behav -R --testplusarg "UVM_TESTNAME=$$t"; then \
 	    passed=$$((passed+1)); \
 	    echo "PASSED: $$t"; \
 	  else \
