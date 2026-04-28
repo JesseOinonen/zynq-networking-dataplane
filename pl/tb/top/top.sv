@@ -16,7 +16,7 @@ module top;
         .clk(clk)
     );
 
-    axi_if tb_axi(clk);
+    axi_if tb_axi(clk, rst_n);
 
     dataplane_top #(.DATA_WIDTH(64)) u_dataplane_top (
         .clk125 (clk),

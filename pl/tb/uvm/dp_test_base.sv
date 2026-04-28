@@ -20,6 +20,7 @@ class dp_test_base extends uvm_test;
 
     task run_phase(uvm_phase phase);
         phase.raise_objection(this);
+        wait (axi_vif.rst_n === 1'b1);
         run_test_body(phase);
         phase.drop_objection(this);
     endtask

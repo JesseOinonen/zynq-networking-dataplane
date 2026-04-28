@@ -1,4 +1,4 @@
-interface axi_if(input logic clk);
+interface axi_if(input logic clk, input logic rst_n);
 
 // AXI4-Lite signals
 logic [31:0] AWADDR, WDATA, ARADDR, RDATA;
@@ -17,35 +17,53 @@ logic        tready;
 
 // AXI4-Lite Write Task
 task automatic write(input logic [31:0] addr, input logic [31:0] data);
+    @(posedge clk);
     AWADDR  = addr;
+    AWVALID = 1;
     WDATA   = data;
-    AWVALID = 1; 
-    WVALID = 1; 
-    WSTRB = 4'b1111;
-    fork
-        begin
-            wait (AWREADY && WREADY);
-            @(posedge clk) 
-            AWVALID = 0; 
-            WVALID = 0;
-            BREADY = 1; 
-        end
-        begin
-            #500ns;
-            $error("Timeout waiting for AWREADY or WREADY response");
-        end
-    join_any
-    disable fork;
+    WSTRB   = 4'b1111;
+    WVALID  = 1;
 
+    // AW and W channels are independent — handle them in parallel
+    fork
+        begin : aw_channel
+            fork
+                begin
+                    @(posedge clk iff (AWVALID && AWREADY));
+                    AWVALID = 0;
+                end
+                begin
+                    #500ns;
+                    $error("Timeout waiting for AWREADY");
+                end
+            join_any
+            disable fork;
+        end
+        begin : w_channel
+            fork
+                begin
+                    @(posedge clk iff (WVALID && WREADY));
+                    WVALID = 0;
+                end
+                begin
+                    #500ns;
+                    $error("Timeout waiting for WREADY");
+                end
+            join_any
+            disable fork;
+        end
+    join
+
+    // Write response — assert BREADY before waiting for BVALID
+    BREADY = 1;
     fork
         begin
-            wait(BVALID); 
-            @(posedge clk) 
+            @(posedge clk iff (BVALID && BREADY));
             BREADY = 0;
         end
         begin
             #500ns;
-            $error("Timeout waiting for BVALID response");
+            $error("Timeout waiting for BVALID");
         end
     join_any
     disable fork;
@@ -53,32 +71,32 @@ endtask
 
 // AXI4-Lite Read Task
 task automatic read(input logic [31:0] addr, output logic [31:0] data);
-    ARADDR = addr; 
-    ARVALID = 1; 
+    @(posedge clk);
+    ARADDR  = addr;
+    ARVALID = 1;
+    RREADY  = 1;
+
     fork
         begin
-            wait(ARREADY); 
-            @(posedge clk) 
+            @(posedge clk iff (ARVALID && ARREADY));
             ARVALID = 0;
-            RREADY = 1; 
         end
         begin
             #500ns;
-            $error("Timeout waiting for ARREADY response");
+            $error("Timeout waiting for ARREADY");
         end
     join_any
     disable fork;
 
     fork
         begin
-            wait(RVALID); 
-            @(posedge clk) 
-            data = RDATA; 
+            @(posedge clk iff (RVALID && RREADY));
+            data   = RDATA;
             RREADY = 0;
         end
         begin
             #500ns;
-            $error("Timeout waiting for RVALID response");
+            $error("Timeout waiting for RVALID");
         end
     join_any
     disable fork;

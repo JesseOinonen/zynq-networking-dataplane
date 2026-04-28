@@ -71,10 +71,10 @@ regression: build
 	echo "================================================"; \
 	[ $$failed -eq 0 ]
 
-# Open Vivado GUI
+# Open Vivado GUI with test configured
 gui: build
-	@echo "Opening Vivado GUI..."
-	cd $(BUILD) && $(VIVADO) $(PROJECT).xpr &
+	@echo "Opening Vivado GUI for test: $(TEST)"
+	cd $(BUILD) && $(VIVADO) -mode gui -source $(SCRIPTS_DIR)/sim.tcl -tclargs $(TEST) &
 
 clean:
 	@echo "Cleaning build directory..."
