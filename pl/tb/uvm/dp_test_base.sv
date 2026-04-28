@@ -27,4 +27,17 @@ class dp_test_base extends uvm_test;
     virtual task run_test_body(uvm_phase phase);
     endtask
 
+    function void report_phase(uvm_phase phase);
+        uvm_report_server svr = uvm_report_server::get_server();
+        int err_count = svr.get_severity_count(UVM_ERROR) +
+                        svr.get_severity_count(UVM_FATAL);
+        if (err_count > 0) begin
+            `uvm_info("TEST_STATUS",
+                $sformatf("TEST FAILED: %0d error(s)", err_count), UVM_NONE)
+            $fatal(1, "Exiting with non-zero status due to UVM errors");
+        end else begin
+            `uvm_info("TEST_STATUS", "TEST PASSED", UVM_NONE)
+        end
+    endfunction
+
 endclass

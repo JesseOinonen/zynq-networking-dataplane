@@ -1,187 +1,247 @@
 # Testbench Guide
 
-This document explains how to run simulations for the Zynq Networking Dataplane project.
+This document describes the UVM testbench architecture and simulation workflow for the Zynq Networking Dataplane project.
 
 ## Quick Start
 
-
 ### Run a Single Test
 ```bash
-make sim TEST=axi4_lite
+make sim TEST=flow_table_test
 ```
 
-Available tests:
-- `axi4_lite` - AXI4-Lite basic read/write test
-- `axi_rx` - AXI RX module test
-- `flow_key_gen` - Flow key generation test
-- `flow_table` - Flow table test
-- `action_stage` - Action stage test
+Default test (if `TEST` is omitted): `axi4_lite_test`
 
 ### Run All Tests (Regression)
 ```bash
 make regression
 ```
 
-This will compile once, then run all tests sequentially and report results.
-
 ### Open Vivado GUI
 ```bash
 make gui
 ```
 
-To run simulations in the GUI:
-1. Run `make gui` to open Vivado
-2. Select Simulation in the left panel
-3. Right-click and select "Run Simulation"
-4. In the Tcl console: `run all`
+---
+
+## Available Tests
+
+| Test name | Description |
+|---|---|
+| `axi4_lite_test` | Basic AXI4-Lite register write/read verification |
+| `parser_test` | Sends a TCP/IP packet and checks parsed header fields |
+| `flow_key_gen_test` | Sends a packet and verifies extracted 128-bit flow key |
+| `flow_table_test` | Writes a flow table entry, then sends a matching packet |
+| `action_stage_test` | Exercises the action stage control register |
+
+---
 
 ## Makefile Targets
 
 | Target | Description |
-|--------|-------------|
-| `make sim TEST=<name>` | Compile design, then run a single testcase with xsim |
-| `make regression` | Compile design once, then run all testcases with xsim |
-| `make gui` | Open Vivado GUI with project (for interactive debugging) |
-| `make sim_gui TEST=<name>` | Open Vivado GUI with project |
-| `make clean` | Remove build directory |
-| `make help` | Display help message |
+|---|---|
+| `make sim TEST=<name>` | Build project and run a single test with xsim |
+| `make regression` | Build project once, then run all tests sequentially |
+| `make files` | Re-add/update source files in an existing project |
+| `make gui` | Open Vivado GUI with the project |
+| `make clean` | Remove the entire build directory |
 
-## Test Infrastructure
+---
+
+## UVM Architecture
 
 ### Directory Structure
+
 ```
 pl/tb/
 ├── top/
-│   ├── top.sv              - Main testbench (dispatches to testcases)
-│   ├── axi_if.sv           - AXI interface with read/write/stream tasks
-│   ├── submodules.sv       - Clock and reset generators
-│   └── register.svh        - Register definitions (CSR addresses)
+│   ├── axi_if.sv          - AXI4-Lite + AXI Stream interface (tasks: write, read, stream_send)
+│   ├── submodules.sv      - Clock (50 MHz) and reset generators
+│   ├── top.sv             - Testbench top: instantiates DUT and interface, calls run_test()
+│   └── register.svh       - CSR address defines
+├── uvm/
+│   ├── dp_pkg.sv          - Top-level UVM package (`include`s everything below)
+│   ├── axi_lite_seq_item.sv
+│   ├── axi_lite_driver.sv
+│   ├── axi_lite_monitor.sv
+│   ├── axi_lite_scoreboard.sv
+│   ├── axi_lite_agent.sv
+│   ├── axi_lite_seq.sv    - axi_lite_write_seq, axi_lite_read_seq
+│   ├── axi_stream_seq_item.sv
+│   ├── axi_stream_driver.sv
+│   ├── axi_stream_monitor.sv
+│   ├── axi_stream_agent.sv
+│   ├── parser_seq.sv      - Sends the reference TCP/IP packet over AXI Stream
+│   ├── dp_vseq_base.sv    - Virtual sequence base (holds axi_lite_seqr + axi_stream_seqr handles)
+│   ├── dp_env.sv          - UVM env: contains axi_lite_agent + axi_stream_agent
+│   └── dp_test_base.sv    - UVM test base: gets vif from config_db, builds env
 └── cases/
-    ├── axi4_lite_testcase_pkg.sv
-    ├── axi_rx_testcase_pkg.sv
-    ├── flow_key_gen_testcase_pkg.sv
-    ├── flow_table_testcase_pkg.sv
-    └── action_stage_testcase_pkg.sv
+    ├── axi4_lite_test.sv  - axi4_lite_vseq + axi4_lite_test
+    ├── parser_test.sv     - parser_vseq + parser_test
+    ├── flow_key_gen_test.sv
+    ├── flow_table_test.sv
+    └── action_stage_test.sv
 ```
 
-### How Tests Are Invoked
+### Component Hierarchy
 
-1. **Makefile** invokes Vivado to compile and elaborate (via `compile.tcl`)
-2. **compile.tcl** (Vivado Tcl script) compiles the design once and elaborates it
-3. This creates the xsim executable and simulation database
-4. **Makefile** then calls xsim directly with `+TEST=<name>` plusarg
-5. **top.sv** (testbench module) receives the test name via `$value$plusargs("TEST=%s", testname)`
-6. **run_test()** task dispatches to the appropriate testcase package
-7. **testcase package** runs the test and reports results
+```
+top (module)
+└── uvm_test_top  [+UVM_TESTNAME=<test_class>]
+    └── dp_test_base / <test_class>
+        └── dp_env
+            ├── axi_lite_agent
+            │   ├── uvm_sequencer #(axi_lite_seq_item)   ← axi_lite_seqr
+            │   ├── axi_lite_driver    (calls axi_vif.write / axi_vif.read)
+            │   └── axi_lite_monitor
+            └── axi_stream_agent
+                ├── uvm_sequencer #(axi_stream_seq_item) ← axi_stream_seqr
+                ├── axi_stream_driver  (calls axi_vif.stream_send)
+                └── axi_stream_monitor
+```
 
-This workflow compiles once and runs tests directly with xsim, which is much faster than launching Vivado for each test.
+### Virtual Interface Flow
 
-### Adding a New Test
-
-To add a new testcase:
-
-1. Create `pl/tb/cases/my_test_testcase_pkg.sv`:
+`top.sv` puts `tb_axi` into the config DB:
 ```systemverilog
-package my_test_testcase_pkg;
-    `include "../top/register.svh"
+uvm_config_db#(virtual axi_if)::set(null, "uvm_test_top", "axi_vif", tb_axi);
+```
 
-    task my_test_testcase(input virtual axi_if axi, output int passed, output int total);
-        logic [31:0] read_data;
+`dp_test_base` retrieves it and distributes it to both agents:
+```systemverilog
+uvm_config_db#(virtual axi_if)::set(this, "env.axi_agent.*",    "axi_vif", axi_vif);
+uvm_config_db#(virtual axi_if)::set(this, "env.stream_agent.*", "axi_vif", axi_vif);
+```
 
-        $display("Running my_test_testcase...");
-        
-        // Your test code here
-        
-        passed++;
-        total++;
-        $display("Completed my_test_testcase.");
+### Test Execution Flow
+
+1. `xsim` is launched with `+UVM_TESTNAME=<classname>`
+2. UVM's `run_test()` in `top.sv` instantiates the named test class
+3. The test creates a virtual sequence (`*_vseq extends dp_vseq_base`)
+4. The vseq sets sequencer handles and calls `vseq.start(null)`
+5. Inside the vseq `body()`, stimulus is driven through sequences:
+   - `axi_lite_write_seq` / `axi_lite_read_seq` → `axi_lite_seqr` → driver → `axi_vif.write/read`
+   - `parser_seq` → `axi_stream_seqr` → driver → `axi_vif.stream_send`
+
+---
+
+## Adding a New Test
+
+### 1. Create the test file in `pl/tb/cases/`
+
+```systemverilog
+// pl/tb/cases/my_test.sv
+
+class my_vseq extends dp_vseq_base;
+    `uvm_object_utils(my_vseq)
+
+    function new(string name = "my_vseq");
+        super.new(name);
+    endfunction
+
+    task body();
+        axi_lite_write_seq wr;
+        axi_lite_read_seq  rd;
+
+        wr = axi_lite_write_seq::type_id::create("wr");
+        wr.addr = `CSR_CTRL;
+        wr.data = 32'hDEADBEEF;
+        wr.start(axi_lite_seqr);
+
+        rd = axi_lite_read_seq::type_id::create("rd");
+        rd.addr = `CSR_CTRL;
+        rd.start(axi_lite_seqr);
+
+        if (rd.data !== 32'hDEADBEEF)
+            `uvm_error("MY_TEST", $sformatf("Mismatch: got 0x%08X", rd.data))
+        else
+            `uvm_info("MY_TEST", "PASSED", UVM_LOW)
     endtask
+endclass
 
-endpackage
+class my_test extends dp_test_base;
+    `uvm_component_utils(my_test)
+
+    function new(string name, uvm_component parent);
+        super.new(name, parent);
+    endfunction
+
+    virtual task run_test_body(uvm_phase phase);
+        my_vseq vseq = my_vseq::type_id::create("vseq");
+        vseq.axi_lite_seqr   = env.axi_agent.seqr;
+        vseq.axi_stream_seqr = env.stream_agent.seqr;
+        vseq.start(null);
+    endtask
+endclass
 ```
 
-2. Update `pl/tb/top/top.sv`:
+### 2. Add the `\`include` to `dp_pkg.sv`
+
 ```systemverilog
-// Add import at top
-import my_test_testcase_pkg::*;
-
-// Add dispatch case in run_test() task
-else if (name == "my_test") my_test_testcase(tb_axi, passed, total);
+`include "my_test.sv"
 ```
 
-3. Add test name to Makefile `TESTS` variable:
+### 3. Add to the `TESTS` list in the Makefile
+
 ```makefile
-TESTS := axi4_lite axi_rx flow_key_gen flow_table action_stage my_test
+TESTS := axi4_lite_test parser_test flow_key_gen_test flow_table_test action_stage_test my_test
 ```
 
-4. Run with:
+### 4. Run it
+
 ```bash
 make sim TEST=my_test
 ```
 
+---
+
+## Simulation Sources in Vivado
+
+Only the following files are added as Vivado simulation sources. Everything else is
+`\`include`d by `dp_pkg.sv` via the configured include directories.
+
+| File(s) | Why added directly |
+|---|---|
+| `pl/tb/top/*.sv` | Independent modules: `axi_if`, `submodules`, `top` |
+| `pl/tb/uvm/dp_pkg.sv` | UVM package entry point |
+
+Include directories set in `compile.tcl` and `add_files.tcl` (absolute paths):
+- `pl/tb/uvm/`
+- `pl/tb/cases/`
+- `pl/tb/top/`
+
+---
+
 ## Vivado Configuration
 
-The testbench uses:
-- **Top module**: `top` (from `pl/tb/top/top.sv`)
-- **Simulator**: xsim (Vivado's built-in simulator)
-- **Clock**: 50 MHz (10ns period)
-- **Reset**: Active low, asserts for first 100ns
+| Setting | Value |
+|---|---|
+| Top module (sim) | `top` |
+| Simulator | xsim (Vivado built-in) |
+| UVM library | `-L uvm` (xvlog + xelab) |
+| Clock | 50 MHz (10 ns half-period) |
+| Reset | Active-low, asserts for first 100 ns |
 
-### WSL Setup (Windows Subsystem for Linux)
-
-If you're running Linux/WSL but Vivado is installed on Windows:
-
-1. Find your Windows Vivado installation path
-2. Update `vivado/Makefile` - change this line:
-   ```makefile
-   VIVADO_PATH := cmd.exe /c "C:\AMDDesignTools\2025.2\Vivado\bin\vivado.bat"
-   ```
-   to match your actual Vivado version and location.
-
-3. To find the correct path on Windows:
-   - Open PowerShell and run: `Get-Command vivado.bat`  
-   - Or check: `C:\Xilinx\Vivado\<version>\bin\vivado.bat` or `C:\AMDDesignTools\<version>\Vivado\bin\vivado.bat`
-
-The file will then look like:
-```makefile
-VIVADO_PATH := cmd.exe /c "C:\Xilinx\Vivado\2025.2\bin\vivado.bat"
-```
-
-The Makefile will then properly invoke Windows Vivado from the WSL Linux shell.
+---
 
 ## Troubleshooting
 
-### "Vivado command not found" or "vivado.bat not found"
-- You're likely missing the correct Windows Vivado path in the Makefile
-- Check the "WSL Setup" section above
-- Run this in Windows PowerShell to find Vivado: `Get-Command vivado.bat`
-- Update the `VIVADO_PATH` line in `vivado/Makefile` with the correct path
+### `cannot open include file '*.sv'`
+Run `make files` to update include directory settings in the project, then `make clean && make sim`.
 
-### "Project doesn't exist"
-- First run will create the project automatically using `scripts/build.tcl`
-- This may take a few minutes
-- Ensure you have write permissions in `vivado/build/`
+### `use of undefined macro 'uvm_error'` in `axi_if.sv`
+`axi_if.sv` is compiled before `dp_pkg.sv` and has no access to UVM macros.
+Use `$error(...)` instead of `` `uvm_error `` inside the interface.
 
-### Test fails with "Unknown test"
-- Check spelling of test name
-- Verify test is imported in `top.sv`
-- Verify test name is handled in `run_test()` task
+### `cd: can't cd to vivado/build/.../xsim`
+The regression loop uses an absolute `$(SIM_DIR_ABS)` path — if you see this error, ensure
+you are running `make` from the repository root.
 
-### Regression stops early
-- Check simulation output for errors
-- Common issues: timeouts in interface tasks, assertion failures
-- Use `make sim_gui TEST=failing_test` to debug in GUI
+### Test not found / UVM fatal `UVM_TESTNAME`
+- The `TEST` variable must match the exact UVM class name (e.g. `flow_table_test`, not `flow_table`)
+- Verify the class has `` `uvm_component_utils(<classname>) `` registered
+- Verify `` `include "<file>.sv" `` is present in `dp_pkg.sv`
 
-### "Permission denied" errors on `cmd.exe`
-- Ensure `cmd.exe` is in your Windows PATH
-- Run `which cmd.exe` from WSL to verify
-- If not found, your Windows installation may be incomplete
-
-## Output
-
-Each test produces a transcript with:
-- Test start/completion messages
-- Any error or warning messages
-- Final result: "RESULT: X / Y PASSED"
-
-A failed test returns non-zero exit code (causes regression to stop).
+### Simulation hangs (timeout)
+AXI handshake tasks in `axi_if.sv` have a 500 ns timeout. A hang typically means
+the DUT is not asserting `AWREADY`/`WREADY`/`ARREADY`/`RVALID`/`tready`.
+Check the DUT's clock and reset connectivity in `top.sv`.

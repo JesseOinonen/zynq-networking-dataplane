@@ -4,7 +4,8 @@ XSIM := $(dir $(VIVADO))xsim
 PROJECT := dataplane
 BUILD := vivado/build/$(PROJECT)
 XPR := $(BUILD)/$(PROJECT).xpr
-SIM_DIR := $(BUILD)/$(PROJECT).sim/sim_1/behav/xsim
+SIM_DIR     := $(BUILD)/$(PROJECT).sim/sim_1/behav/xsim
+SIM_DIR_ABS := $(abspath $(SIM_DIR))
 SCRIPTS_DIR := ../../../flow/scripts
 
 TEST ?= axi4_lite_test
@@ -56,7 +57,7 @@ regression: build
 	for t in $(TESTS); do \
 	  echo ""; \
 	  echo ">>> Running test: $$t"; \
-	  if cd $(SIM_DIR) && $(XSIM) top_behav -R --testplusarg "UVM_TESTNAME=$$t"; then \
+	  if cd $(SIM_DIR_ABS) && $(XSIM) top_behav -R --testplusarg "UVM_TESTNAME=$$t"; then \
 	    passed=$$((passed+1)); \
 	    echo "PASSED: $$t"; \
 	  else \
