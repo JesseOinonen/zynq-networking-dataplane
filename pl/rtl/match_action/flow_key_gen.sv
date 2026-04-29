@@ -103,6 +103,8 @@ always_ff @(posedge clk or negedge rst_n) begin
             udp_tcp_captured <= 1'b1;
         end
 
+        // FLOW KEY SHOULD BE VALID FOR WHOLE PACKET so action stage can rely on the flow hits etc. 
+        // (Otherwise if flow key goes in valid between the packet then data coming after the header is not directed accordingly)
         if (gen_flow_key) begin
             flow_key <= {8'h0,
                         eth_type_capt,

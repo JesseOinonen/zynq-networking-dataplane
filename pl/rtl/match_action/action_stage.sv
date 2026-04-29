@@ -74,7 +74,7 @@ always_ff @(posedge clk or negedge rst_n) begin
                                 action_table[waddr].dst_mac[47:32] <= wdata[15:0];
                                 action_table[waddr].src_mac[47:32] <= wdata[31:16];
                                 action_table[waddr].valid          <= 1'b1;
-                                axi_w_counter <= '0;
+                                axi_w_counter                      <= '0;
                             end
                             default: ;
                         endcase
@@ -89,6 +89,7 @@ always_ff @(posedge clk or negedge rst_n) begin
     end
 end
 
+// Verify if reset is even needed here !!!!!!!!!
 // Action Stage
 always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
@@ -96,20 +97,49 @@ always_ff @(posedge clk or negedge rst_n) begin
         tdata_out  <= '0;
         tvalid_out <= 1'b0;
         tlast_out  <= 1'b0;
+        tkeep_out  <= '0;
     end
     else begin
         trap <= 1'b0;
         if (flow_hit) begin
            if (action_table[flow_id].valid && action_table[flow_id].flow_id == flow_id) begin
                 if (action_table[flow_id].drop) begin
-                    tlast_out <= 1'b0;
+                    tvalid_out <= 1'b0;
                 end
                 else if (action_table[flow_id].forward) begin
-                //    tdata_out <= packet_data; // forward pipelined data coming from parser stage
+                    tdata_out  <= tdata_in;
+                    tvalid_out <= tvalid_in;
+                    tlast_out  <= tlast_in;
+                    tkeep_out  <= tkeep_in;
                 end
                 else if (action_table[flow_id].modify) begin
-                //    tdata_out <= modify_packet(packet_data); // modify pipelined data coming from parser based on action table
+                    // Bring signal that determines if we are in an ETH frame or SOP signal so we modify the correct part of the packet
+                    // and make a counter that keeps track which data phase we are at
+
+                    // PSEUDO if ETH header (first data) && action_table[flow_id].valid
+                    // tdata_out[31:0]  <= action_table[flow_id].dst_mac[31:0];
+                    // tdata_out[47:32] <= action_table[flow_id].dst_mac[47:32];
+                    // tdata_out[63:48] <= action_table[flow_id].src_mac[15:0];
+                    // tvalid_out       <= 1'b1;
+                    // tkeep_out        <= '1;
+                    // tlast_out        <= tlast_in;
+
+                    // PSEUDO else if ETH header (second data) && action_table[flow_id].valid
+                    // tdata_out[31:0]  <= action_table[flow_id].src_mac[47:16];
+                    // tvalid_out       <= 1'b1;
+                    // tkeep_out        <= 8'b00001111;  // Make sure this is correct way 
+                    // tlast_out        <= tlast_in;
+
+                    // PSEUDO else if action_table[flow_id].valid (other data)
+                    // tdata_out        <= tdata_in;
+                    // tvalid_out       <= tvalid_in;
+                    // tkeep_out        <= tkeep_in;
+                    // tlast_out        <= tlast_in;
+
+                    // PSEUDO else (if modify and for some reason data in it is not valid)
+                    // tvalid_out <= 1'b0;
                 end
+                // If trap bit is set, we can set trap signal here and let PS handle the trapped packet (e.g., send to CPU port or drop)
                 if (action_table[flow_id].trap) begin
                     trap <= 1'b1;
                 end

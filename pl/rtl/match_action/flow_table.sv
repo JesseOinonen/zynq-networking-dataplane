@@ -78,6 +78,7 @@ always_ff @(posedge clk or negedge rst_n) begin
         end
 
         rd_entry <= flow_table[addr];
+        // flow_hit and flow_id should remain stable for the whole packet (as long as flow_key is also held stable for the duration of incoming packet)
         flow_hit <= rd_entry.valid && (rd_entry.key == flow_key_d);
         flow_id  <= rd_entry.id;
     end
