@@ -104,6 +104,11 @@ logic                            tvalid_udp_tcp_sig;
 logic [DATA_WIDTH-1:0]           tdata_udp_tcp_sig;
 logic [DATA_WIDTH/8-1:0]         tkeep_udp_tcp_sig;
 logic                            tlast_udp_tcp_sig;
+logic                            sop_eth_sig;
+logic                            sop_ipv4_sig;
+logic                            sop_udp_tcp_sig;
+logic                            sop_flow_key_sig;
+logic                            sop_flow_table_sig;
 
 action_stage #(.DATA_WIDTH(DATA_WIDTH)) u_action_stage (
     .clk(clk125),
@@ -114,6 +119,7 @@ action_stage #(.DATA_WIDTH(DATA_WIDTH)) u_action_stage (
     .wdata(wdata_act_sig),
     .we(we_act_sig),
     .wdone(wdone_act_sig),
+    .sop_in(sop_flow_table_sig),
     .tvalid_in(tvalid_flow_table_sig),
     .tdata_in(tdata_flow_table_sig),
     .tkeep_in(tkeep_flow_table_sig),
@@ -247,7 +253,8 @@ eth_parser #(.DATA_WIDTH(DATA_WIDTH)) u_eth_parser (
     .src_mac(src_mac_sig),
     .eth_type(eth_type_sig),
     .wcnt_eth(wcnt_eth_sig),
-    .in_packet_out(in_packet_eth_sig)
+    .in_packet_out(in_packet_eth_sig),
+    .sop_out(sop_eth_sig)
 );
 
 flow_key_gen u_flow_key_gen (
@@ -273,7 +280,9 @@ flow_key_gen u_flow_key_gen (
     .tvalid_out(tvalid_flow_key_sig),
     .tdata_out(tdata_flow_key_sig),
     .tkeep_out(tkeep_flow_key_sig),
-    .tlast_out(tlast_flow_key_sig)
+    .tlast_out(tlast_flow_key_sig),
+    .sop_in(sop_udp_tcp_sig),
+    .sop_out(sop_flow_key_sig)
 );
 
 flow_table u_flow_table (
@@ -294,7 +303,9 @@ flow_table u_flow_table (
     .tvalid_out(tvalid_flow_table_sig),
     .tdata_out(tdata_flow_table_sig),
     .tkeep_out(tkeep_flow_table_sig),
-    .tlast_out(tlast_flow_table_sig)
+    .tlast_out(tlast_flow_table_sig),
+    .sop_in(sop_flow_key_sig),
+    .sop_out(sop_flow_table_sig)
 );
 
 ipv4_parser #(.DATA_WIDTH(DATA_WIDTH)) u_ipv4_parser (
@@ -307,6 +318,7 @@ ipv4_parser #(.DATA_WIDTH(DATA_WIDTH)) u_ipv4_parser (
     .tlast_in(tlast_eth_sig),
     .wcnt_eth(wcnt_eth_sig),
     .in_packet(in_packet_eth_sig),
+    .sop_in(sop_eth_sig),
     .tdata_out(tdata_ipv4_sig),
     .tkeep_out(tkeep_ipv4_sig),
     .tvalid_out(tvalid_ipv4_sig),
@@ -316,7 +328,8 @@ ipv4_parser #(.DATA_WIDTH(DATA_WIDTH)) u_ipv4_parser (
     .dst_ip(dst_ip_sig),
     .protocol(protocol_sig),
     .wcnt_ipv4(wcnt_ipv4_sig),
-    .in_packet_out(in_packet_ipv4_sig)
+    .in_packet_out(in_packet_ipv4_sig),
+    .sop_out(sop_ipv4_sig)
 );
 
 udp_tcp_parser #(.DATA_WIDTH(DATA_WIDTH)) u_udp_tcp_parser (
@@ -330,6 +343,7 @@ udp_tcp_parser #(.DATA_WIDTH(DATA_WIDTH)) u_udp_tcp_parser (
     .protocol(protocol_sig),
     .wcnt_ipv4(wcnt_ipv4_sig),
     .in_packet(in_packet_ipv4_sig),
+    .sop_in(sop_ipv4_sig),
     .udp_tcp_parser_ready(udp_tcp_parser_ready_sig),
     .udp_src_port(udp_src_port_sig),
     .udp_dst_port(udp_dst_port_sig),
@@ -344,6 +358,7 @@ udp_tcp_parser #(.DATA_WIDTH(DATA_WIDTH)) u_udp_tcp_parser (
     .tcp_window_size(tcp_window_size_sig),
     .tcp_checksum(tcp_checksum_sig),
     .tcp_urgent_pointer(tcp_urgent_pointer_sig),
+    .sop_out(sop_udp_tcp_sig),
     .tvalid_out(tvalid_udp_tcp_sig),
     .tdata_out(tdata_udp_tcp_sig),
     .tkeep_out(tkeep_udp_tcp_sig),

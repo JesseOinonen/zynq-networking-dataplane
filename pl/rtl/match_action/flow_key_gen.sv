@@ -14,8 +14,10 @@ module flow_key_gen #(
     input  logic [15:0]             tcp_src_port,
     input  logic [15:0]             tcp_dst_port,
     input  logic                    udp_tcp_parser_ready,
+    input  logic                    sop_in,
     output logic [127:0]            flow_key,
     output logic                    valid_flow_key,
+    output logic                    sop_out      = 1'b0,
     // AXI stream signals pass through
     input  logic                    tvalid_in,
     input  logic [DATA_WIDTH-1:0]   tdata_in,
@@ -46,6 +48,7 @@ always_ff @(posedge clk) begin
     tdata_out  <= tdata_in;
     tkeep_out  <= tkeep_in;
     tlast_out  <= tlast_in;
+    sop_out    <= sop_in;
 end
 
 always_ff @(posedge clk) begin

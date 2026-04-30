@@ -10,6 +10,7 @@ module action_stage #(
     input  logic [9:0]              waddr,    // AXI4-Lite write address
     input  logic [31:0]             wdata,    // AXI4-Lite write data
     input  logic                    we,       // AXI4-Lite write enable
+    input  logic                    sop_in,   // Start of packet signal for modify action
     output logic                    wdone,    // AXI4-Lite write done
     output logic                    trap,
     // AXI stream signals
@@ -26,6 +27,10 @@ module action_stage #(
 logic [2:0] axi_w_counter;
 logic [9:0] waddr_ff; // Registered address for modify action check
 
+logic       modify_done     = 1'b0;
+logic [1:0] modify_counter  = '0;
+logic       header_detected = 1'b0; // Signal to indicate the first beat of the packet for modify action
+
 typedef struct packed {
     logic        drop;
     logic        forward;
@@ -35,12 +40,29 @@ typedef struct packed {
     logic        count;
     logic        valid;
     logic [9:0]  flow_id;
+    // L2
     logic [47:0] dst_mac;
     logic [47:0] src_mac;
+    // L3
+    logic [31:0] dst_ip;
+    logic [31:0] src_ip;
+    // L4
+    logic [15:0] dst_port;
+    logic [15:0] src_port;
 } action_t;
 
 // action_table BRAM / 1024 entrys
 (* ram_style = "block" *) action_t action_table [0:1023];
+
+// Header detection for modify action
+always_ff @(posedge clk) begin
+    if (sop_in) begin
+        header_detected <= 1'b1;
+    end
+    else if (modify_done) begin
+        header_detected <= 1'b0;
+    end
+end
 
 // AXI4-Lite write to Action Table
 always_ff @(posedge clk) begin
@@ -66,15 +88,21 @@ always_ff @(posedge clk) begin
             end
             else if (waddr == waddr_ff) begin // axi_w_counter should be set to 1 if modify action is expected, make sure we are writing to the same address for subsequent mac writes
                 axi_w_counter <= axi_w_counter + 1;
-                if (axi_w_counter < 4 && !action_table[waddr].valid) begin
+                if (axi_w_counter < 7) begin
                         case (axi_w_counter)
                             1: action_table[waddr].dst_mac[31:0] <= wdata[31:0];
                             2: action_table[waddr].src_mac[31:0] <= wdata[31:0];
                             3: begin
                                 action_table[waddr].dst_mac[47:32] <= wdata[15:0];
                                 action_table[waddr].src_mac[47:32] <= wdata[31:16];
-                                action_table[waddr].valid          <= 1'b1;
-                                axi_w_counter                      <= '0;
+                            end
+                            4: action_table[waddr].dst_ip <= wdata;
+                            5: action_table[waddr].src_ip <= wdata;
+                            6: begin
+                                action_table[waddr].dst_port <= wdata[15:0];
+                                action_table[waddr].src_port <= wdata[31:16];
+                                action_table[waddr].valid    <= 1'b1;
+                                axi_w_counter                <= '0;
                             end
                             default: ;
                         endcase
@@ -105,27 +133,42 @@ always_ff @(posedge clk) begin
                 tkeep_out  <= tkeep_in;
             end
             else if (action_table[flow_id].modify) begin
-                // Bring signal that determines if we are in an ETH frame or SOP signal so we modify the correct part of the packet
-                // and make a counter that keeps track which data phase we are at
-                // PSEUDO if ETH header (first data) && action_table[flow_id].valid
-                // tdata_out[31:0]  <= action_table[flow_id].dst_mac[31:0];
-                // tdata_out[47:32] <= action_table[flow_id].dst_mac[47:32];
-                // tdata_out[63:48] <= action_table[flow_id].src_mac[15:0];
-                // tvalid_out       <= 1'b1;
-                // tkeep_out        <= '1;
-                // tlast_out        <= tlast_in;
-                // PSEUDO else if ETH header (second data) && action_table[flow_id].valid
-                // tdata_out[31:0]  <= action_table[flow_id].src_mac[47:16];
-                // tvalid_out       <= 1'b1;
-                // tkeep_out        <= 8'b00001111;  // Make sure this is correct way 
-                // tlast_out        <= tlast_in;
-                // PSEUDO else if action_table[flow_id].valid (other data)
-                // tdata_out        <= tdata_in;
-                // tvalid_out       <= tvalid_in;
-                // tkeep_out        <= tkeep_in;
-                // tlast_out        <= tlast_in;
-                // PSEUDO else (if modify and for some reason data in it is not valid)
-                // tvalid_out <= 1'b0;
+                if (!modify_done) begin
+                    if (modify_counter == 0) begin
+                        tdata_out[31:0]  <= action_table[flow_id].dst_mac[31:0];
+                        tdata_out[47:32] <= action_table[flow_id].dst_mac[47:32];
+                        tdata_out[63:48] <= action_table[flow_id].src_mac[15:0];
+                        tvalid_out       <= 1'b1;
+                        tkeep_out        <= '1;
+                        tlast_out        <= tlast_in;
+                        modify_counter <= modify_counter + 1;
+                    end
+                    else if (modify_counter == 1) begin
+                        tdata_out[31:0]  <= action_table[flow_id].src_mac[47:16];
+                        tdata_out[63:32] <= action_table[flow_id].dst_ip;
+                        tvalid_out       <= 1'b1;
+                        tkeep_out        <= '1;
+                        tlast_out        <= tlast_in;
+                        modify_done      <= 1'b1;
+                        modify_counter   <= modify_counter + 1;
+                    end
+                    else if (modify_counter == 2) begin
+                        tdata_out[31:0]   <= action_table[flow_id].src_ip;
+                        tdata_out[63:32]  <= {action_table[flow_id].dst_port, action_table[flow_id].src_port};
+                        tvalid_out        <= 1'b1;
+                        tkeep_out         <= '1;
+                        tlast_out         <= tlast_in;
+                        modify_done       <= 1'b1;
+                        modify_counter    <= '0;
+                    end
+                end
+                else begin
+                    tdata_out        <= tdata_in;
+                    tvalid_out       <= tvalid_in;
+                    tkeep_out        <= tkeep_in;
+                    tlast_out        <= tlast_in;
+                    if (tlast_in) modify_done <= 1'b0; // Reset for next packet
+                end
             end
             // If trap bit is set, we can set trap signal here and let PS handle the trapped packet (e.g., send to CPU port or drop)
             if (action_table[flow_id].trap) begin

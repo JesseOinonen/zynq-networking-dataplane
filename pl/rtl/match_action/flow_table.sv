@@ -10,9 +10,11 @@ module flow_table #(
     input  logic [9:0]              waddr,           // AXI4-Lite write address
     input  logic [31:0]             wdata,           // AXI4-Lite write data
     input  logic                    we,              // AXI4-Lite write enable
+    input  logic                    sop_in,
     output logic                    flow_hit,        // Flow table hit
     output logic [9:0]              flow_id,         // Flow id from flow table
     output logic                    wdone,           // AXI4-Lite write done 
+    output logic                    sop_out      = 1'b0,
     // AXI stream signals for action stage
     input  logic                    tvalid_in,
     input  logic [DATA_WIDTH-1:0]   tdata_in,
@@ -53,6 +55,7 @@ always_ff @(posedge clk) begin
     tdata_out  <= tdata_in;
     tkeep_out  <= tkeep_in;
     tlast_out  <= tlast_in;
+    sop_out    <= sop_in;
 end
 
 always_ff @(posedge clk) begin

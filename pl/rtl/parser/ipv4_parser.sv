@@ -10,11 +10,13 @@ module ipv4_parser #(
     input  logic                    tlast_in,
     input  logic [3:0]              wcnt_eth,
     input  logic                    in_packet,
+    input  logic                    sop_in,
     output logic                    ipv4_parser_ready,
     output logic [31:0]             src_ip,
     output logic [31:0]             dst_ip,
     output logic [7:0]              protocol,
     output logic [4:0]              wcnt_ipv4,
+    output logic                    sop_out      = 1'b0,
     // AxI stream outputs (pass through)
     output logic [DATA_WIDTH-1:0]   tdata_out  = '0,
     output logic [DATA_WIDTH/8-1:0] tkeep_out  = '0,
@@ -39,6 +41,7 @@ always_ff @(posedge clk) begin
     tvalid_out    <= tvalid_in;
     tlast_out     <= tlast_in;
     in_packet_out <= in_packet;
+    sop_out       <= sop_in;
 end
 
 // IPV4 header parsing

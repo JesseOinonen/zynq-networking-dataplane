@@ -13,6 +13,7 @@ module udp_tcp_parser #(
     input  logic [7:0]              protocol,
     input  logic [4:0]              wcnt_ipv4,
     input  logic                    in_packet,
+    input  logic                    sop_in,
     // UDP/TCP header outputs
     output logic                    udp_tcp_parser_ready,
     output logic [15:0]             udp_src_port,
@@ -28,6 +29,7 @@ module udp_tcp_parser #(
     output logic [15:0]             tcp_window_size,
     output logic [15:0]             tcp_checksum,
     output logic [15:0]             tcp_urgent_pointer,
+    output logic                    sop_out      = 1'b0,
     // AXI stream outputs (pass through)
     output logic                    tvalid_out = 1'b0,
     output logic [DATA_WIDTH-1:0]   tdata_out  = '0,
@@ -46,6 +48,7 @@ always_ff @(posedge clk) begin
     tdata_out  <= tdata_in;
     tkeep_out  <= tkeep_in;
     tlast_out  <= tlast_in;
+    sop_out    <= sop_in;
 end
 
 // UDP/TCP header parsing

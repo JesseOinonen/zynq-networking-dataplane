@@ -42,10 +42,12 @@ always_ff @(posedge clk) begin
         in_packet <= 1'b0;
     end
     else if (tvalid && tready) begin
-        if (tlast)
+        if (tlast) begin
             in_packet <= 1'b0;
-        else
+        end
+        else begin
             in_packet <= 1'b1;
+        end
     end
 end
 

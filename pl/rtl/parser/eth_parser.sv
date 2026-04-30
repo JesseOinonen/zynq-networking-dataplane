@@ -14,12 +14,13 @@ module eth_parser #(
     output logic [47:0]             src_mac,
     output logic [15:0]             eth_type,
     output logic [ 3:0]             wcnt_eth,
+    output logic                    in_packet_out = 1'b0,
+    output logic                    sop_out       = 1'b0,
     // AXI stream outputs (pass through)
     output logic [DATA_WIDTH-1:0]   tdata_out  = '0,
     output logic [DATA_WIDTH/8-1:0] tkeep_out  = '0,
     output logic                    tvalid_out = 1'b0,
-    output logic                    tlast_out  = 1'b0,
-    output logic                    in_packet_out = 1'b0
+    output logic                    tlast_out  = 1'b0
 );
 
 logic [3:0] counter;
@@ -33,6 +34,7 @@ always_ff @(posedge clk) begin
     tvalid_out    <= tvalid_in;
     tlast_out     <= tlast_in;
     in_packet_out <= in_packet;
+    sop_out       <= sop;
 end
 
 // Ethernet header parsing
