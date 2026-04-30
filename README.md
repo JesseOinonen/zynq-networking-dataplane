@@ -138,9 +138,16 @@ Address bits `[31:30]` select the target:
 ```
 .
 ├── docs/
-│   ├── specifications/
-│   └── TODO.md
+|   ├── TESTBENCH_GUIDE.md    # Guide on how to use TB
+│   ├── TODO.md               # What needs to be done
+|   ├── verification_plan.md  # Verification checklist
+│   └── Zynq Networking Dataplane Specifications
+|
 ├── pl/
+│   ├── formal/
+│   │   ├── axi_slave/
+│   │   └── fifo/
+│   │
 │   ├── rtl/
 │   │   ├── axi/
 │   │   │   ├── axi_rx.sv          # AXI-Stream RX FIFO
@@ -160,15 +167,17 @@ Address bits `[31:30]` select the target:
 │   │   │   ├── latency_monitor.sv
 │   │   │   ├── throughput_counter.sv
 │   │   │   └── error_counter.sv
-│   │   ├── top/
-│   │   │   ├── dataplane_top.sv   # Full pipeline instantiation
-│   │   │   └── zynq_wrapper.sv    # PS/PL integration (Vivado block design)
-│   │   ├── csr.sv                 # Control and status registers
-│   │   └── dataplane_pkg.sv       # Shared parameters and CSR offsets
+│   │   └── top/
+│   │       ├── dataplane_top.sv   # Full pipeline instantiation
+│   │       ├── zynq_wrapper.sv    # PS/PL integration (Vivado block design)
+│   │       ├── csr.sv             # Control and status registers
+│   │       └── dataplane_pkg.sv   # Shared parameters and CSR offsets
+│   │
 │   └── tb/
 │       ├── cases/                 # Per-module testcase packages
 │       ├── top/                   # Testbench top, AXI interface, submodule wiring
-│       └── verification_plan.md   # Verification checklist
+│       └── uvm/                   # UVM setup
+|
 ├── ps/                            # ARM PS software (Linux driver / userspace)
 ├── vivado/                        # Vivado project and constraints
 └── Makefile
