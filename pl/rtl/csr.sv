@@ -2,7 +2,7 @@ import dataplane_pkg::*;
 
 module csr (
     input  logic         clk,
-    input  logic         rst_n,
+    input  logic         rst,
     input  logic [31:0]  waddr,      // Write address
     input  logic [31:0]  wdata,      // Write data
     input  logic         we,         // Write enable
@@ -30,10 +30,10 @@ module csr (
 
 logic [31:0] register_file [0:15];
 
-
+// IS RESET EVEN NECESSARY? CAN WE JUST RELY ON THE PS TO INITIALIZE THE CSR BY WRITING TO IT?
 // Write logic
-always_ff @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
+always_ff @(posedge clk) begin
+    if (rst) begin
         for (int i = 0; i < 16; i++) begin
             register_file[i] <= 32'b0;
         end
@@ -81,8 +81,8 @@ always_ff @(posedge clk or negedge rst_n) begin
 end
 
 // Read logic
-always_ff @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
+always_ff @(posedge clk) begin
+    if (rst) begin
         rdata <= 32'b0;
         rdone <= 1'b0;
     end

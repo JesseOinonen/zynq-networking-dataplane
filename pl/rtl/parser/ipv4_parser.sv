@@ -2,7 +2,7 @@ module ipv4_parser #(
     parameter DATA_WIDTH = 64
 )(
     input  logic                    clk,
-    input  logic                    rst_n,
+    input  logic                    rst,
     input  logic [DATA_WIDTH/8-1:0] tkeep_in,
     input  logic [DATA_WIDTH-1:0]   tdata_in,
     input  logic                    tvalid_in,
@@ -10,16 +10,17 @@ module ipv4_parser #(
     input  logic                    tlast_in,
     input  logic [3:0]              wcnt_eth,
     input  logic                    in_packet,
-    output logic [DATA_WIDTH-1:0]   tdata_out,
-    output logic [DATA_WIDTH/8-1:0] tkeep_out,
-    output logic                    tvalid_out,
-    output logic                    tlast_out,
     output logic                    ipv4_parser_ready,
     output logic [31:0]             src_ip,
     output logic [31:0]             dst_ip,
     output logic [7:0]              protocol,
     output logic [4:0]              wcnt_ipv4,
-    output logic                    in_packet_out
+    // AxI stream outputs (pass through)
+    output logic [DATA_WIDTH-1:0]   tdata_out  = '0,
+    output logic [DATA_WIDTH/8-1:0] tkeep_out  = '0,
+    output logic                    tvalid_out = 1'b0,
+    output logic                    tlast_out  = 1'b0,
+    output logic                    in_packet_out = 1'b0
 );
 
 logic [4:0] counter;
@@ -32,26 +33,17 @@ logic [5:0] ipv4_header_length;
 assign ipv4_header_length = (ihl >= 5) ? (ihl << 2) : 6'd20;
 
 // Pass through the data to UDP/TCP parser
-always_ff @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
-        tdata_out     <= '0;
-        tkeep_out     <= '0;
-        tvalid_out    <= 1'b0;
-        tlast_out     <= 1'b0;
-        in_packet_out <= 1'b0;
-    end
-    else begin
-        tdata_out     <= tdata_in;
-        tkeep_out     <= tkeep_in;
-        tvalid_out    <= tvalid_in;
-        tlast_out     <= tlast_in;
-        in_packet_out <= in_packet;
-    end
+always_ff @(posedge clk) begin
+    tdata_out     <= tdata_in;
+    tkeep_out     <= tkeep_in;
+    tvalid_out    <= tvalid_in;
+    tlast_out     <= tlast_in;
+    in_packet_out <= in_packet;
 end
 
 // IPV4 header parsing
-always_ff @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
+always_ff @(posedge clk) begin
+    if (rst) begin
         counter           <= '0;
         ipv4_parser_ready <= 1'b0;
         ihl               <= '0;

@@ -5,10 +5,10 @@ module clk_gen125MHz (output logic clk);
     end
 endmodule
 
-module rst_gen (output logic rst_n);
+module rst_gen (output logic rst);
     initial begin
-        rst_n = 0;
+        rst = 1;
         #100ns;
-        rst_n = 1;
+        rst = 0;
     end
 endmodule

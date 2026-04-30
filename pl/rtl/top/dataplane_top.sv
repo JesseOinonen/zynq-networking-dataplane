@@ -2,7 +2,7 @@ module dataplane_top #(
     parameter DATA_WIDTH = 64
 )(
     input  logic                    clk125,
-    input  logic                    rst_n,
+    input  logic                    rst,
     // AXI4-Lite interface
     input  logic [31:0]             AWADDR,  
     input  logic [ 2:0]             AWPROT,  
@@ -107,7 +107,7 @@ logic                            tlast_udp_tcp_sig;
 
 action_stage #(.DATA_WIDTH(DATA_WIDTH)) u_action_stage (
     .clk(clk125),
-    .rst_n(rst_n),
+    .rst(rst),
     .flow_hit(flow_hit_sig),
     .flow_id(flow_id_sig),
     .waddr(waddr_act_sig),
@@ -154,7 +154,7 @@ axi_addr_decode u_axi_addr_decode (
 
 axi_lite_slave u_axi_lite_slave (
     .clk(clk125),
-    .rst_n(rst_n),
+    .rst(rst),
     .AWADDR(AWADDR),  
     .AWPROT(AWPROT),  
     .AWVALID(AWVALID), 
@@ -186,7 +186,7 @@ axi_lite_slave u_axi_lite_slave (
 
 axi_rx #(.DATA_WIDTH(DATA_WIDTH)) u_axi_rx (
     .clk(clk125),
-    .rst_n(rst_n),
+    .rst(rst),
     .tvalid(tvalid),
     .tdata(tdata),
     .tkeep(tkeep),
@@ -203,7 +203,7 @@ axi_rx #(.DATA_WIDTH(DATA_WIDTH)) u_axi_rx (
 
 csr u_csr (
     .clk(clk125),
-    .rst_n(rst_n),
+    .rst(rst),
     .waddr(waddr_csr_sig), 
     .wdata(wdata_csr_sig), 
     .we(we_csr_sig),    
@@ -231,7 +231,7 @@ csr u_csr (
 
 eth_parser #(.DATA_WIDTH(DATA_WIDTH)) u_eth_parser (
     .clk(clk125),
-    .rst_n(rst_n),
+    .rst(rst),
     .tkeep_in(rx_tkeep_sig),
     .tdata_in(rx_tdata_sig),
     .tvalid_in(rx_tvalid_sig),
@@ -252,7 +252,7 @@ eth_parser #(.DATA_WIDTH(DATA_WIDTH)) u_eth_parser (
 
 flow_key_gen u_flow_key_gen (
     .clk(clk125),
-    .rst_n(rst_n),
+    .rst(rst),
     .eth_type(eth_type_sig),
     .eth_parser_ready(eth_parser_ready_sig),
     .src_ip(src_ip_sig),
@@ -278,7 +278,7 @@ flow_key_gen u_flow_key_gen (
 
 flow_table u_flow_table (
     .clk(clk125),
-    .rst_n(rst_n),
+    .rst(rst),
     .flow_key(flow_key_sig),
     .flow_key_valid(valid_flow_key_sig),
     .waddr(waddr_flow_sig),
@@ -299,7 +299,7 @@ flow_table u_flow_table (
 
 ipv4_parser #(.DATA_WIDTH(DATA_WIDTH)) u_ipv4_parser (
     .clk(clk125),
-    .rst_n(rst_n),
+    .rst(rst),
     .tkeep_in(tkeep_eth_sig),
     .tdata_in(tdata_eth_sig),
     .tvalid_in(tvalid_eth_sig),
@@ -321,7 +321,7 @@ ipv4_parser #(.DATA_WIDTH(DATA_WIDTH)) u_ipv4_parser (
 
 udp_tcp_parser #(.DATA_WIDTH(DATA_WIDTH)) u_udp_tcp_parser (
     .clk(clk125),
-    .rst_n(rst_n),
+    .rst(rst),
     .tkeep_in(tkeep_ipv4_sig),
     .tlast_in(tlast_ipv4_sig),
     .tdata_in(tdata_ipv4_sig),

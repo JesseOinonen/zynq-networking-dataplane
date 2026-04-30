@@ -1,6 +1,6 @@
 module axi_lite_slave (
     input  logic        clk,
-    input  logic        rst_n,
+    input  logic        rst,
     // Write address signals (AW channel)
     input  logic [31:0] AWADDR,  
     input  logic [ 2:0] AWPROT,  
@@ -40,8 +40,8 @@ logic awaddr_valid;
 logic wdata_valid;
 
 // WRITE
-always_ff @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
+always_ff @(posedge clk) begin
+    if (rst) begin
         AWREADY      <= 1'b1;
         WREADY       <= 1'b1;
         BVALID       <= 1'b0;
@@ -91,8 +91,8 @@ end
 
 
 // READ
-always_ff @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
+always_ff @(posedge clk) begin
+    if (rst) begin
         ARREADY <= 1'b1;
         RVALID  <= 1'b0;
         RRESP   <= 2'b00;

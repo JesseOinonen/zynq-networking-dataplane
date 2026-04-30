@@ -4,7 +4,7 @@ module flow_table #(
     parameter DATA_WIDTH = 64
 )(
     input  logic                    clk,
-    input  logic                    rst_n,
+    input  logic                    rst,
     input  logic [127:0]            flow_key,
     input  logic                    flow_key_valid,
     input  logic [9:0]              waddr,           // AXI4-Lite write address
@@ -18,10 +18,10 @@ module flow_table #(
     input  logic [DATA_WIDTH-1:0]   tdata_in,
     input  logic [DATA_WIDTH/8-1:0] tkeep_in,
     input  logic                    tlast_in,
-    output logic                    tvalid_out,
-    output logic [DATA_WIDTH-1:0]   tdata_out,
-    output logic [DATA_WIDTH/8-1:0] tkeep_out,
-    output logic                    tlast_out
+    output logic                    tvalid_out = 1'b0,
+    output logic [DATA_WIDTH-1:0]   tdata_out  = '0,
+    output logic [DATA_WIDTH/8-1:0] tkeep_out  = '0,
+    output logic                    tlast_out  = 1'b0
 );
 
 logic [15:0] hash;
@@ -48,24 +48,16 @@ assign hash     = flow_key[15:0]   ^ flow_key[31:16]  ^ flow_key[47:32]  ^ flow_
                 ^ flow_key[79:64]  ^ flow_key[95:80]  ^ flow_key[111:96] ^ flow_key[127:112];
 assign hash_idx = hash[9:0] ^ {4'b0, hash[15:10]};
 
-always_ff @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
-        tvalid_out <= 1'b0;
-        tdata_out  <= '0;
-        tkeep_out  <= '0;
-        tlast_out  <= 1'b0;
-    end
-    else begin
-        tvalid_out <= tvalid_in;
-        tdata_out  <= tdata_in;
-        tkeep_out  <= tkeep_in;
-        tlast_out  <= tlast_in;
-    end
+always_ff @(posedge clk) begin
+    tvalid_out <= tvalid_in;
+    tdata_out  <= tdata_in;
+    tkeep_out  <= tkeep_in;
+    tlast_out  <= tlast_in;
 end
 
-always_ff @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
-        flow_hit   <= 0;
+always_ff @(posedge clk) begin
+    if (rst) begin
+        flow_hit   <= 1'b0;
         flow_id    <= '0;
         addr       <= '0;
         flow_key_d <= '0;
@@ -85,8 +77,8 @@ always_ff @(posedge clk or negedge rst_n) begin
 end
 
 // Write flow_table from PS (AXI4-lite, 32bits at a time)
-always_ff @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
+always_ff @(posedge clk) begin
+    if (rst) begin
         wr_cnt         <= '0;
         wdone          <= 1'b0;
         wr_entry_tmp   <= '0;

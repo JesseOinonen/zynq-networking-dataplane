@@ -2,7 +2,7 @@ module udp_tcp_parser #(
     parameter DATA_WIDTH = 64
 )(
     input  logic                    clk,
-    input  logic                    rst_n,
+    input  logic                    rst,
     // AXI stream inputs
     input  logic [DATA_WIDTH/8-1:0] tkeep_in,
     input  logic                    tlast_in,
@@ -29,10 +29,10 @@ module udp_tcp_parser #(
     output logic [15:0]             tcp_checksum,
     output logic [15:0]             tcp_urgent_pointer,
     // AXI stream outputs (pass through)
-    output logic                    tvalid_out,
-    output logic [DATA_WIDTH-1:0]   tdata_out,
-    output logic [DATA_WIDTH/8-1:0] tkeep_out,
-    output logic                    tlast_out
+    output logic                    tvalid_out = 1'b0,
+    output logic [DATA_WIDTH-1:0]   tdata_out  = '0,
+    output logic [DATA_WIDTH/8-1:0] tkeep_out  = '0,
+    output logic                    tlast_out  = 1'b0
 );
 
 logic [2:0] udp_counter;
@@ -41,24 +41,16 @@ logic [4:0] wcnt;
 logic       done;
 
 // Pass through AXI stream signals
-always_ff @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
-        tvalid_out <= 1'b0;
-        tdata_out  <= '0;
-        tkeep_out  <= '0;
-        tlast_out  <= 1'b0;
-    end
-    else begin
-        tvalid_out <= tvalid_in;
-        tdata_out  <= tdata_in;
-        tkeep_out  <= tkeep_in;
-        tlast_out  <= tlast_in;
-    end
+always_ff @(posedge clk) begin
+    tvalid_out <= tvalid_in;
+    tdata_out  <= tdata_in;
+    tkeep_out  <= tkeep_in;
+    tlast_out  <= tlast_in;
 end
 
 // UDP/TCP header parsing
-always_ff @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
+always_ff @(posedge clk) begin
+    if (rst) begin
         udp_counter          <= '0;
         tcp_counter          <= '0;
         udp_tcp_parser_ready <= 1'b0;

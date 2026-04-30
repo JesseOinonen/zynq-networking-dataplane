@@ -4,7 +4,7 @@ module axi_rx #(
     parameter ALMOST_FULL = DEPTH - 8
 )(
     input  logic                    clk,
-    input  logic                    rst_n,
+    input  logic                    rst,
 
     // Input from MAC/PHY
     input  logic                    tvalid,
@@ -37,8 +37,8 @@ assign empty  = (count == '0);
 assign tready = (count < ADDR_W+1'(ALMOST_FULL));
 
 // Packet state tracking
-always_ff @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
+always_ff @(posedge clk) begin
+    if (rst) begin
         in_packet <= 1'b0;
     end
     else if (tvalid && tready) begin
@@ -53,24 +53,26 @@ end
 assign sop = tvalid && !in_packet;
 
 // Write
-always_ff @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
+always_ff @(posedge clk) begin
+    if (rst) begin
         wr_ptr <= '0;
-    end else if (tvalid && tready) begin
+    end 
+    else if (tvalid && tready) begin
         mem[wr_ptr[ADDR_W-1:0]] <= {tlast, tkeep, tdata};
         wr_ptr <= wr_ptr + 1;
     end
 end
 
 // Read
-always_ff @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
+always_ff @(posedge clk) begin
+    if (rst) begin
         rd_ptr     <= '0;
         out_tvalid <= 1'b0;
         out_tdata  <= '0;
         out_tkeep  <= '0;
         out_tlast  <= 1'b0;
-    end else begin
+    end 
+    else begin
         if (!empty && out_tready) begin
             {out_tlast, out_tkeep, out_tdata} <= mem[rd_ptr[ADDR_W-1:0]];
             out_tvalid <= 1'b1;

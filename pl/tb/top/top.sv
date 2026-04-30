@@ -6,21 +6,21 @@ import dp_pkg::*;
 
 module top;
     logic clk;
-    logic rst_n;
+    logic rst;
 
     rst_gen u_rst_gen (
-        .rst_n(rst_n)
+        .rst(rst)
     );
 
     clk_gen125MHz u_clk_gen125MHz (
         .clk(clk)
     );
 
-    axi_if tb_axi(clk, rst_n);
+    axi_if tb_axi(clk, rst);
 
     dataplane_top #(.DATA_WIDTH(64)) u_dataplane_top (
         .clk125 (clk),
-        .rst_n  (rst_n),
+        .rst    (rst),
         .AWADDR (tb_axi.AWADDR),
         .AWPROT (tb_axi.AWPROT),
         .AWVALID(tb_axi.AWVALID),

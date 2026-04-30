@@ -2,7 +2,7 @@ module flow_key_gen #(
     parameter DATA_WIDTH = 64
 )(
     input  logic                    clk,
-    input  logic                    rst_n,
+    input  logic                    rst,
     input  logic [15:0]             eth_type,
     input  logic                    eth_parser_ready,
     input  logic [31:0]             src_ip,
@@ -21,10 +21,10 @@ module flow_key_gen #(
     input  logic [DATA_WIDTH-1:0]   tdata_in,
     input  logic [DATA_WIDTH/8-1:0] tkeep_in,
     input  logic                    tlast_in,
-    output logic                    tvalid_out,
-    output logic [DATA_WIDTH-1:0]   tdata_out,
-    output logic [DATA_WIDTH/8-1:0] tkeep_out,
-    output logic                    tlast_out
+    output logic                    tvalid_out = 1'b0,
+    output logic [DATA_WIDTH-1:0]   tdata_out  = '0,
+    output logic [DATA_WIDTH/8-1:0] tkeep_out  = '0,
+    output logic                    tlast_out  = 1'b0
 );
 
 logic        eth_captured;
@@ -41,23 +41,15 @@ logic [15:0] dst_port_capt;
 // Generate flow key once all of the parsers are finished and eth_type is IPv4
 assign gen_flow_key = eth_captured && (eth_type_capt == 16'h0800) && ipv4_captured && udp_tcp_captured;
 
-always_ff @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
-        tvalid_out <= 1'b0;
-        tdata_out  <= '0;
-        tkeep_out  <= '0;
-        tlast_out  <= 1'b0;
-    end
-    else begin
-        tvalid_out <= tvalid_in;
-        tdata_out  <= tdata_in;
-        tkeep_out  <= tkeep_in;
-        tlast_out  <= tlast_in;
-    end
+always_ff @(posedge clk) begin
+    tvalid_out <= tvalid_in;
+    tdata_out  <= tdata_in;
+    tkeep_out  <= tkeep_in;
+    tlast_out  <= tlast_in;
 end
 
-always_ff @(posedge clk or negedge rst_n) begin
-    if (!rst_n) begin
+always_ff @(posedge clk) begin
+    if (rst) begin
         eth_captured     <= 1'b0;
         ipv4_captured    <= 1'b0;
         udp_tcp_captured <= 1'b0;
