@@ -11,6 +11,8 @@ class dp_test_base extends uvm_test;
 
     function void build_phase(uvm_phase phase);
         super.build_phase(phase);
+        // Remove UVM_EXIT from FATAL so report_phase always runs and prints summary
+        uvm_top.set_report_severity_action(UVM_FATAL, UVM_DISPLAY | UVM_LOG | UVM_COUNT);
         if (!uvm_config_db#(virtual axi_if)::get(this, "", "axi_vif", axi_vif))
             `uvm_fatal("VIF_NOT_FOUND", "Virtual interface not found in config db")
         uvm_config_db#(virtual axi_if)::set(this, "env.axi_agent.*",    "axi_vif", axi_vif);
@@ -35,7 +37,7 @@ class dp_test_base extends uvm_test;
         if (err_count > 0) begin
             `uvm_info("TEST_STATUS",
                 $sformatf("TEST FAILED: %0d error(s)", err_count), UVM_NONE)
-            $fatal(1, "Exiting with non-zero status due to UVM errors");
+            $finish;
         end else begin
             `uvm_info("TEST_STATUS", "TEST PASSED", UVM_NONE)
         end

@@ -46,24 +46,25 @@ regression: build
 	@echo "Starting REGRESSION - Running all tests"
 	@echo "Tests: $(TESTS)"
 	@echo "================================================"
-	@# Ensure simulation build exists
 	@if [ ! -d "$(SIM_DIR)" ]; then \
 	  echo "Simulation build not found, compiling..."; \
 	  cd $(BUILD) && $(VIVADO) -mode batch -source $(SCRIPTS_DIR)/compile.tcl; \
 	fi
-	@set -e; \
-	failed=0; \
+	@failed=0; \
 	passed=0; \
 	for t in $(TESTS); do \
 	  echo ""; \
 	  echo ">>> Running test: $$t"; \
-	  if cd $(SIM_DIR_ABS) && $(XSIM) top_behav -R --testplusarg "UVM_TESTNAME=$$t"; then \
+	  _log="/tmp/dp_regress_$$t.log"; \
+	  cd $(SIM_DIR_ABS) && $(XSIM) top_behav -R --testplusarg "UVM_TESTNAME=$$t" 2>&1 | tee "$$_log"; \
+	  if grep -q "TEST PASSED" "$$_log"; then \
 	    passed=$$((passed+1)); \
 	    echo "PASSED: $$t"; \
 	  else \
-	    echo "FAILED: $$t"; \
 	    failed=$$((failed+1)); \
+	    echo "FAILED: $$t"; \
 	  fi; \
+	  rm -f "$$_log"; \
 	done; \
 	echo ""; \
 	echo "================================================"; \

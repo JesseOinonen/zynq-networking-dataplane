@@ -1,4 +1,4 @@
-interface axi_if(input logic clk, input logic rst_n);
+interface axi_if(input logic clk, input logic rst);
 
 // AXI4-Lite signals
 logic [31:0] AWADDR, WDATA, ARADDR, RDATA;
