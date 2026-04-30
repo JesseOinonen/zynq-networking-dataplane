@@ -71,7 +71,10 @@ always_ff @(posedge clk or negedge rst_n) begin
         flow_key         <= '0;
     end
     else begin
-        valid_flow_key <= 1'b0;
+        // Flow key should remain valid for the duartion of the packet
+        if (tlast_in) begin
+          valid_flow_key <= 1'b0;
+        end
         
         if (eth_captured && eth_type_capt != 16'h0800) begin
             eth_captured     <= 1'b0;
@@ -105,6 +108,7 @@ always_ff @(posedge clk or negedge rst_n) begin
 
         // FLOW KEY SHOULD BE VALID FOR WHOLE PACKET so action stage can rely on the flow hits etc. 
         // (Otherwise if flow key goes in valid between the packet then data coming after the header is not directed accordingly)
+        // Flow key should be generated once for each packet
         if (gen_flow_key) begin
             flow_key <= {8'h0,
                         eth_type_capt,
