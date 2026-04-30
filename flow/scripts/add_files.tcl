@@ -2,14 +2,11 @@
 # Can be run repeatedly; Vivado will ignore already-added files.
 
 # RTL sources
-add_files [glob ../../../pl/rtl/dataplane_pkg.sv]
 add_files [glob ../../../pl/rtl/axi/*.sv]
 add_files [glob ../../../pl/rtl/parser/*.sv]
-add_files [glob ../../../pl/rtl/csr.sv]
-add_files [glob ../../../pl/rtl/top/dataplane_top.sv]
+add_files [glob ../../../pl/rtl/top/*.sv]
 add_files [glob ../../../pl/rtl/match_action/*.sv]
 # add_files [glob ../../../pl/rtl/observability/*.sv]
-# add_files [glob ../../../pl/rtl/*.sv]
 
 # Testbench files
 # top/*.sv = interface, clock/reset generators, testbench top (independent modules)
