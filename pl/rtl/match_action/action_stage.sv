@@ -149,7 +149,6 @@ always_ff @(posedge clk) begin
                         tvalid_out       <= 1'b1;
                         tkeep_out        <= '1;
                         tlast_out        <= tlast_in;
-                        modify_done      <= 1'b1;
                         modify_counter   <= modify_counter + 1;
                     end
                     else if (modify_counter == 2) begin
