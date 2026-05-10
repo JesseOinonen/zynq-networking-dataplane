@@ -52,6 +52,7 @@ regression: build
 	fi
 	@failed=0; \
 	passed=0; \
+	failed_tests=""; \
 	for t in $(TESTS); do \
 	  echo ""; \
 	  echo ">>> Running test: $$t"; \
@@ -62,6 +63,7 @@ regression: build
 	    echo "PASSED: $$t"; \
 	  else \
 	    failed=$$((failed+1)); \
+	    failed_tests="$$failed_tests $$t"; \
 	    echo "FAILED: $$t"; \
 	  fi; \
 	  rm -f "$$_log"; \
@@ -69,6 +71,12 @@ regression: build
 	echo ""; \
 	echo "================================================"; \
 	echo "REGRESSION COMPLETE: $$passed passed, $$failed failed"; \
+	if [ $$failed -gt 0 ]; then \
+	  echo "Failed tests:"; \
+	  for ft in $$failed_tests; do \
+	    echo "  - $$ft"; \
+	  done; \
+	fi; \
 	echo "================================================"; \
 	[ $$failed -eq 0 ]
 

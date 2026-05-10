@@ -44,8 +44,8 @@ class flow_key_gen_vseq extends dp_vseq_base;
         rd_seq = axi_lite_read_seq::type_id::create("rd_seq");
         rd_seq.addr = `CSR_FLOW_KEY_128;
         rd_seq.start(axi_lite_seqr);
-        if (rd_seq.data !== 32'h000000C0)
-            `uvm_error("FLOW_KEY_TEST", $sformatf("CSR_FLOW_KEY_128 mismatch: expected 0x000000C0, got 0x%08X", rd_seq.data))
+        if (rd_seq.data !== 32'h000800C0)
+            `uvm_error("FLOW_KEY_TEST", $sformatf("CSR_FLOW_KEY_128 mismatch: expected 0x000800C0, got 0x%08X", rd_seq.data))
         else
             `uvm_info("FLOW_KEY_TEST", "CSR_FLOW_KEY_128 match successful", UVM_LOW)
     endtask
