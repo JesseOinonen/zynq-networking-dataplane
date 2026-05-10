@@ -30,13 +30,10 @@ module csr (
 
 logic [31:0] register_file [0:15];
 
-// IS RESET EVEN NECESSARY? CAN WE JUST RELY ON THE PS TO INITIALIZE THE CSR BY WRITING TO IT?
 // Write logic
 always_ff @(posedge clk) begin
     if (rst) begin
-        for (int i = 0; i < 16; i++) begin
-            register_file[i] <= 32'b0;
-        end
+        register_file[DP_CTRL] <= '0;
         wdone <= 1'b0;
     end
     else begin
@@ -71,7 +68,7 @@ always_ff @(posedge clk) begin
         // Write control register
         if (we) begin
             case (waddr[5:2])
-                4'h1:   register_file[CSR_CTRL] <= wdata;
+                4'h1:   register_file[DP_CTRL] <= wdata;
                 // Add more RW control registers here
                 default: ; // ignore writes to RO registers
             endcase

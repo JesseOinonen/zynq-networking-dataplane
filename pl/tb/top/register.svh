@@ -1,5 +1,5 @@
 // CSR word offsets (32-bit words)
-`define CSR_CTRL           6'h4
+`define DP_CTRL           6'h4
 
 // Flow key / parser status (read-only)
 `define CSR_DST_MAC_L      6'h8

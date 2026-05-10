@@ -11,12 +11,12 @@ class axi4_lite_vseq extends dp_vseq_base;
         axi_lite_read_seq  rd_seq;
 
         wr_seq      = axi_lite_write_seq::type_id::create("wr_seq");
-        wr_seq.addr = `CSR_CTRL;
+        wr_seq.addr = `DP_CTRL;
         wr_seq.data = 32'hAAAAAAAA;
         wr_seq.start(axi_lite_seqr);
 
         rd_seq      = axi_lite_read_seq::type_id::create("rd_seq");
-        rd_seq.addr = `CSR_CTRL;
+        rd_seq.addr = `DP_CTRL;
         rd_seq.start(axi_lite_seqr);
 
         if (rd_seq.data !== 32'hAAAAAAAA)
