@@ -8,12 +8,19 @@ logic [3:0]  WSTRB;
 logic [1:0]  BRESP, RRESP;
 logic [2:0]  AWPROT, ARPROT;
 
-// AXI Stream signals
-logic        tvalid;
-logic [63:0] tdata;
-logic [7:0]  tkeep;
-logic        tlast;
-logic        tready;
+// AXI Stream signals to PL
+logic        tvalid_rx;
+logic [63:0] tdata_rx;
+logic [7:0]  tkeep_rx;
+logic        tlast_rx;
+logic        tready_rx;
+
+// AXI Stream signals from PL
+logic        tvalid_tx;
+logic [63:0] tdata_tx;
+logic [7:0]  tkeep_tx;
+logic        tlast_tx;
+logic        tready_tx;
 
 // AXI4-Lite Write Task
 task automatic write(input logic [31:0] addr, input logic [31:0] data);
@@ -104,19 +111,19 @@ endtask
 
 // AXI Stream send beat
 task automatic stream_send(input logic [63:0] data, input logic [7:0] keep, input logic last);
-    tdata  = data;
-    tkeep  = keep;
-    tlast  = last;
-    tvalid = 1;
+    tdata_rx  = data;
+    tkeep_rx  = keep;
+    tlast_rx  = last;
+    tvalid_rx = 1;
     fork
         begin
-            wait (tready);
+            wait (tready_rx);
             @(posedge clk) 
-            tvalid = 0;
+            tvalid_rx = 0;
         end
         begin
             #500ns;
-            $error("Timeout waiting for tready response");
+            $error("Timeout waiting for tready_rx response");
         end
     join_any
     disable fork;

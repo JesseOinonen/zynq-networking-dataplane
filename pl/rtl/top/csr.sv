@@ -23,12 +23,26 @@ module csr (
     input  logic [15:0]  tcp_dst_port,
     input  logic [127:0] flow_key,
     input  logic         flow_key_valid,
-    output logic [31:0]  rdata,      // Read data
-    output logic         rdone,      // Read done
-    output logic         wdone       // Write done
+    output logic [31:0]  rdata,            // Read data
+    output logic         rdone,            // Read done
+    output logic         wdone,            // Write done
+    output logic         enable,           // Enable dataplane
+    output logic         loopback,         // Send packets back to sender w/o processing
+    output logic         flow_table_flush, // Flush the whole flow table
+    output logic [1:0]   default_action,   // Default action for dataplane
+    output logic [3:0]   irq_enable,       // Enable interrupts
+    output logic         stats_clear       // Clear packet counters
 );
 
 logic [31:0] register_file [0:15];
+
+// Dataplane control signals
+assign enable           = register_file[DP_CTRL][0];
+assign loopback         = register_file[DP_CTRL][1];
+assign flow_table_flush = register_file[DP_CTRL][2];
+assign default_action   = register_file[DP_CTRL][4:3];
+assign irq_enble        = register_file[DP_CTRL][8:5];
+assign stats_clear      = register_file[DP_CTRL][9];
 
 // Write logic
 always_ff @(posedge clk) begin
@@ -37,6 +51,10 @@ always_ff @(posedge clk) begin
         wdone <= 1'b0;
     end
     else begin
+        // Self-clear flow_table_flush & stats_clear
+        register_file[DP_CTRL][2] <= 1'b0;
+        register_file[DP_CTRL][9] <= 1'b0;
+
         wdone <= 1'b0;
         // READ-ONLY status from parser
         if (eth_ready) begin

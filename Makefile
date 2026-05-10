@@ -9,7 +9,7 @@ SIM_DIR_ABS := $(abspath $(SIM_DIR))
 SCRIPTS_DIR := ../../../flow/scripts
 
 TEST ?= axi4_lite_test
-TESTS := axi4_lite_test parser_test flow_key_gen_test flow_table_test action_stage_test
+TESTS := axi4_lite_test parser_test flow_key_gen_test flow_table_test action_stage_test datapath_test
 
 .PHONY: all build sim regression gui clean
 
@@ -84,6 +84,10 @@ regression: build
 gui: build
 	@echo "Opening Vivado GUI for test: $(TEST)"
 	cd $(BUILD) && $(VIVADO) -mode gui -source $(SCRIPTS_DIR)/sim.tcl -tclargs $(TEST) &
+
+# Create a new UVM test skeleton: make testcase-<testname>
+testcase-%:
+	python3 flow/scripts/new_test.py $*
 
 clean:
 	@echo "Cleaning build directory..."

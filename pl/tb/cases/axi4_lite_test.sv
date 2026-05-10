@@ -7,22 +7,20 @@ class axi4_lite_vseq extends dp_vseq_base;
     endfunction
 
     task body();
-        axi_lite_write_seq wr_seq;
-        axi_lite_read_seq  rd_seq;
+        logic [31:0] rdata;
 
-        wr_seq      = axi_lite_write_seq::type_id::create("wr_seq");
-        wr_seq.addr = `DP_CTRL;
-        wr_seq.data = 32'hAAAAAAAA;
-        wr_seq.start(axi_lite_seqr);
+        #10ns;
+        // Enable dataplane
+        axi4_write(`DP_CTRL, 32'h1);
 
-        rd_seq      = axi_lite_read_seq::type_id::create("rd_seq");
-        rd_seq.addr = `DP_CTRL;
-        rd_seq.start(axi_lite_seqr);
+        #10ns;
 
-        if (rd_seq.data !== 32'hAAAAAAAA)
-            `uvm_error("AXI4_LITE_TEST", $sformatf("Data mismatch: expected 0xAAAAAAAA, got 0x%08X", rd_seq.data))
-        else
-            `uvm_info("AXI4_LITE_TEST", $sformatf("Data match successful: 0x%08X", rd_seq.data), UVM_LOW)
+        // Pattern avoids self-clearing bits: bit 2 (flow_table_flush), bit 9 (stats_clear)
+        axi4_write(`DP_CTRL, 32'hA8A8A8A8);
+        axi4_read(`DP_CTRL, rdata);
+
+        if (rdata !== 32'hA8A8A8A8) `uvm_error("AXI4_LITE_TEST", $sformatf("Data mismatch: expected 0xA8A8A8A8, got 0x%08X", rdata))
+        else `uvm_info("AXI4_LITE_TEST", $sformatf("Data match successful: 0x%08X", rdata), UVM_LOW)
     endtask
 
 endclass

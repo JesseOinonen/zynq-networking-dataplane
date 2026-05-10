@@ -7,8 +7,12 @@ class flow_key_gen_vseq extends dp_vseq_base;
     endfunction
 
     task body();
-        parser_seq        pkt_seq;
-        axi_lite_read_seq rd_seq;
+        parser_seq   pkt_seq;
+        logic [31:0] rdata;
+
+        #10ns;
+        // Enable dataplane
+        axi4_write(`DP_CTRL, 32'h1);
 
         #10ns;
 
@@ -17,37 +21,21 @@ class flow_key_gen_vseq extends dp_vseq_base;
 
         #50ns;
 
-        rd_seq = axi_lite_read_seq::type_id::create("rd_seq");
-        rd_seq.addr = `CSR_FLOW_KEY_32;
-        rd_seq.start(axi_lite_seqr);
-        if (rd_seq.data !== 32'hD2005006)
-            `uvm_error("FLOW_KEY_TEST", $sformatf("CSR_FLOW_KEY_32 mismatch: expected 0xD2005006, got 0x%08X", rd_seq.data))
-        else
-            `uvm_info("FLOW_KEY_TEST", "CSR_FLOW_KEY_32 match successful", UVM_LOW)
+        axi4_read(`CSR_FLOW_KEY_32, rdata);
+        if (rdata !== 32'hD2005006) `uvm_error("FLOW_KEY_TEST", $sformatf("CSR_FLOW_KEY_32 mismatch: expected 0xD2005006, got 0x%08X", rdata))
+        else `uvm_info("FLOW_KEY_TEST", "CSR_FLOW_KEY_32 match successful", UVM_LOW)
 
-        rd_seq = axi_lite_read_seq::type_id::create("rd_seq");
-        rd_seq.addr = `CSR_FLOW_KEY_64;
-        rd_seq.start(axi_lite_seqr);
-        if (rd_seq.data !== 32'hA8010204)
-            `uvm_error("FLOW_KEY_TEST", $sformatf("CSR_FLOW_KEY_64 mismatch: expected 0xA8010204, got 0x%08X", rd_seq.data))
-        else
-            `uvm_info("FLOW_KEY_TEST", "CSR_FLOW_KEY_64 match successful", UVM_LOW)
+        axi4_read(`CSR_FLOW_KEY_64, rdata);
+        if (rdata !== 32'hA8010204) `uvm_error("FLOW_KEY_TEST", $sformatf("CSR_FLOW_KEY_64 mismatch: expected 0xA8010204, got 0x%08X", rdata))
+        else `uvm_info("FLOW_KEY_TEST", "CSR_FLOW_KEY_64 match successful", UVM_LOW)
 
-        rd_seq = axi_lite_read_seq::type_id::create("rd_seq");
-        rd_seq.addr = `CSR_FLOW_KEY_96;
-        rd_seq.start(axi_lite_seqr);
-        if (rd_seq.data !== 32'hA80101C0)
-            `uvm_error("FLOW_KEY_TEST", $sformatf("CSR_FLOW_KEY_96 mismatch: expected 0xA80101C0, got 0x%08X", rd_seq.data))
-        else
-            `uvm_info("FLOW_KEY_TEST", "CSR_FLOW_KEY_96 match successful", UVM_LOW)
+        axi4_read(`CSR_FLOW_KEY_96, rdata);
+        if (rdata !== 32'hA80101C0) `uvm_error("FLOW_KEY_TEST", $sformatf("CSR_FLOW_KEY_96 mismatch: expected 0xA80101C0, got 0x%08X", rdata))
+        else `uvm_info("FLOW_KEY_TEST", "CSR_FLOW_KEY_96 match successful", UVM_LOW)
 
-        rd_seq = axi_lite_read_seq::type_id::create("rd_seq");
-        rd_seq.addr = `CSR_FLOW_KEY_128;
-        rd_seq.start(axi_lite_seqr);
-        if (rd_seq.data !== 32'h000800C0)
-            `uvm_error("FLOW_KEY_TEST", $sformatf("CSR_FLOW_KEY_128 mismatch: expected 0x000800C0, got 0x%08X", rd_seq.data))
-        else
-            `uvm_info("FLOW_KEY_TEST", "CSR_FLOW_KEY_128 match successful", UVM_LOW)
+        axi4_read(`CSR_FLOW_KEY_128, rdata);
+        if (rdata !== 32'h000800C0) `uvm_error("FLOW_KEY_TEST", $sformatf("CSR_FLOW_KEY_128 mismatch: expected 0x000800C0, got 0x%08X", rdata))
+        else `uvm_info("FLOW_KEY_TEST", "CSR_FLOW_KEY_128 match successful", UVM_LOW)
     endtask
 
 endclass

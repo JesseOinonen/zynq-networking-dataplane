@@ -6,24 +6,20 @@ class flow_table_vseq extends dp_vseq_base;
         super.new(name);
     endfunction
 
-    local task write_csr(logic [31:0] addr, logic [31:0] data);
-        axi_lite_write_seq wr_seq;
-        wr_seq      = axi_lite_write_seq::type_id::create("wr_seq");
-        wr_seq.addr = addr;
-        wr_seq.data = data;
-        wr_seq.start(axi_lite_seqr);
-    endtask
-
     task body();
         parser_seq pkt_seq;
 
         #10ns;
+        // Enable dataplane
+        axi4_write(`DP_CTRL, 32'h1);
 
-        write_csr(`CSR_FLOW_TABLE_WDATA, 32'hD2005006);
-        write_csr(`CSR_FLOW_TABLE_WDATA, 32'hA8010204);
-        write_csr(`CSR_FLOW_TABLE_WDATA, 32'hA80101C0);
-        write_csr(`CSR_FLOW_TABLE_WDATA, 32'h000000C0);
-        write_csr(`CSR_FLOW_TABLE_WDATA, 32'h466);
+        #10ns;
+
+        axi4_write(`CSR_FLOW_TABLE_WDATA, 32'hD2005006);
+        axi4_write(`CSR_FLOW_TABLE_WDATA, 32'hA8010204);
+        axi4_write(`CSR_FLOW_TABLE_WDATA, 32'hA80101C0);
+        axi4_write(`CSR_FLOW_TABLE_WDATA, 32'h000000C0);
+        axi4_write(`CSR_FLOW_TABLE_WDATA, 32'h466);
 
         pkt_seq = parser_seq::type_id::create("pkt_seq");
         pkt_seq.start(axi_stream_seqr);

@@ -35,4 +35,5 @@ package dp_pkg;
     `include "flow_key_gen_test.sv"
     `include "flow_table_test.sv"
     `include "action_stage_test.sv"
+    `include "datapath_test.sv"
 endpackage

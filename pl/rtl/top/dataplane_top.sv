@@ -24,12 +24,17 @@ module dataplane_top #(
     output logic [31:0]             RDATA,   
     output logic [ 1:0]             RRESP,
     // AXI-Stream RX interface
-    input  logic                    tvalid,
-    input  logic [DATA_WIDTH-1:0]   tdata,
-    input  logic [DATA_WIDTH/8-1:0] tkeep,
-    input  logic                    tlast,
-    output logic                    tready
+    input  logic                    tvalid_in,
+    input  logic [DATA_WIDTH-1:0]   tdata_in,
+    input  logic [DATA_WIDTH/8-1:0] tkeep_in,
+    input  logic                    tlast_in,
+    output logic                    tready_out,
     // AXI-Stream TX interface
+    output logic                    tvalid_out,
+    output logic [DATA_WIDTH-1:0]   tdata_out,
+    output logic [DATA_WIDTH/8-1:0] tkeep_out,
+    output logic                    tlast_out,
+    input  logic                    tready_in
 );
 
 logic [31:0]                     waddr_sig;
@@ -109,6 +114,30 @@ logic                            sop_ipv4_sig;
 logic                            sop_udp_tcp_sig;
 logic                            sop_flow_key_sig;
 logic                            sop_flow_table_sig;
+logic                            enable;
+logic                            loopback;
+logic                            flow_table_flush_csr;
+logic [1:0]                      default_action_csr;
+logic                            irq_enable_csr;
+logic                            stats_clear_csr;
+logic                            tvalid_flow_key_sig;
+logic [DATA_WIDTH-1:0]           tdata_flow_key_sig;
+logic [DATA_WIDTH/8-1:0]         tkeep_flow_key_sig;
+logic                            tlast_flow_key_sig;
+logic                            tvalid_flow_table_sig;
+logic [DATA_WIDTH-1:0]           tdata_flow_table_sig;
+logic [DATA_WIDTH/8-1:0]         tkeep_flow_table_sig;
+logic                            tlast_flow_table_sig;
+logic                            act_tvalid_sig;
+logic [DATA_WIDTH-1:0]           act_tdata_sig;
+logic [DATA_WIDTH/8-1:0]         act_tkeep_sig;
+logic                            act_tlast_sig;
+
+// Output mux: loopback bypasses dataplane
+assign tvalid_out = loopback ? rx_tvalid_sig : act_tvalid_sig;
+assign tdata_out  = loopback ? rx_tdata_sig  : act_tdata_sig;
+assign tkeep_out  = loopback ? rx_tkeep_sig  : act_tkeep_sig;
+assign tlast_out  = loopback ? rx_tlast_sig  : act_tlast_sig;
 
 action_stage #(.DATA_WIDTH(DATA_WIDTH)) u_action_stage (
     .clk(clk125),
@@ -124,11 +153,10 @@ action_stage #(.DATA_WIDTH(DATA_WIDTH)) u_action_stage (
     .tdata_in(tdata_flow_table_sig),
     .tkeep_in(tkeep_flow_table_sig),
     .tlast_in(tlast_flow_table_sig),
-    .tvalid_out(), // --- TBD ---
-    .tdata_out(),  // --- TBD ---
-    .tkeep_out(),  // --- TBD ---
-    .tlast_out()   // --- TBD ---
-
+    .tvalid_out(act_tvalid_sig),
+    .tdata_out(act_tdata_sig),
+    .tkeep_out(act_tkeep_sig),
+    .tlast_out(act_tlast_sig)
 );
 
 axi_addr_decode u_axi_addr_decode (
@@ -193,18 +221,19 @@ axi_lite_slave u_axi_lite_slave (
 axi_rx #(.DATA_WIDTH(DATA_WIDTH)) u_axi_rx (
     .clk(clk125),
     .rst(rst),
-    .tvalid(tvalid),
-    .tdata(tdata),
-    .tkeep(tkeep),
-    .tlast(tlast),
-    .tready(tready),
+    .tvalid(tvalid_in),
+    .tdata(tdata_in),
+    .tkeep(tkeep_in),
+    .tlast(tlast_in),
+    .tready(tready_out),
     .out_tvalid(rx_tvalid_sig),
     .out_tdata(rx_tdata_sig),
     .out_tkeep(rx_tkeep_sig),
     .out_tlast(rx_tlast_sig),
     .out_tready(1'b1),
     .sop(sop_sig),
-    .in_packet(in_packet_sig)
+    .in_packet(in_packet_sig),
+    .enable(enable)
 );
 
 csr u_csr (
@@ -232,7 +261,13 @@ csr u_csr (
     .flow_key_valid(valid_flow_key_sig),
     .rdata(rdata_csr_sig), 
     .rdone(rdone_csr_sig), 
-    .wdone(wdone_csr_sig)  
+    .wdone(wdone_csr_sig),
+    .enable(enable),          
+    .loopback(loopback),        
+    .flow_table_flush(flow_table_flush_csr),
+    .default_action(default_action_csr),  
+    .irq_enable(irq_enable_csr),      
+    .stats_clear(stats_clear_csr)       
 );
 
 eth_parser #(.DATA_WIDTH(DATA_WIDTH)) u_eth_parser (
@@ -296,6 +331,7 @@ flow_table u_flow_table (
     .flow_hit(flow_hit_sig),
     .flow_id(flow_id_sig),
     .wdone(wdone_flow_sig),
+    .flush(flow_table_flush_csr),
     .tvalid_in(tvalid_flow_key_sig),
     .tdata_in(tdata_flow_key_sig),
     .tkeep_in(tkeep_flow_key_sig),

@@ -20,11 +20,11 @@ class axi_stream_monitor extends uvm_monitor;
         axi_stream_seq_item beat;
         forever begin
             @(posedge axi_vif.clk);
-            if (axi_vif.tvalid && axi_vif.tready) begin
+            if (axi_vif.tvalid_rx && axi_vif.tready_rx) begin
                 beat       = axi_stream_seq_item::type_id::create("beat");
-                beat.tdata = axi_vif.tdata;
-                beat.tkeep = axi_vif.tkeep;
-                beat.tlast = axi_vif.tlast;
+                beat.tdata = axi_vif.tdata_rx;
+                beat.tkeep = axi_vif.tkeep_rx;
+                beat.tlast = axi_vif.tlast_rx;
                 ap.write(beat);
             end
         end
