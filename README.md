@@ -11,20 +11,23 @@ This project implements a hardware packet processing pipeline in the FPGA progra
 - 3-stage protocol parser: Ethernet → IPv4 → TCP/UDP
 - 128-bit 5-tuple flow key generation (eth_type + src_ip + dst_ip + src_port + dst_port + protocol)
 - Hash-based flow table with 1024 entries and XOR fold hash (full 128-bit coverage)
-- Match-action engine with drop / forward / modify / trap / count actions
+- Match-action engine with drop / forward / modify / trap / count actions; flow-miss pass-through
 - AXI-Lite slave and CSR register file for PS control
-- Observability modules: timestamp, latency monitor, throughput counter, error counter
 
 **In progress / planned:**
-- AXI-Stream TX egress (axi_tx stub present)
-- action_stage packet data pass-through and header rewrite
-- Elastic buffer before TX
+- AXI-Stream TX egress (`axi_tx` stub present)
+- Elastic FIFO buffer between action_stage and axi_tx
+- Wire action_stage AXI-Stream outputs in `dataplane_top`
+- Trap path: AXI DMA S2MM → DDR → PS (ring buffer)
+- Observability module stubs: timestamp, latency_monitor, throughput_counter, error_counter
 - AXI DMA integration for PS ↔ DDR packet transfer
 - AXI4-Stream width converter for DATA_WIDTH=256 operation
 
 ---
 
 ## Architecture
+
+See [docs/zynq_dataplane.drawio](docs/zynq_dataplane.drawio) for the full block diagram.
 
 ### Pipeline
 
@@ -63,11 +66,23 @@ MAC / PHY
       │ flow_hit, flow_id
       ▼
 ┌──────────────┐
-│ action_stage │  Reads action_table[flow_id] → drop / forward / modify / trap / count
-└──────────────┘
-         │  (AXI-Stream TX output — in progress)
-         ▼
-      axi_tx
+│ action_stage │  drop / forward / modify / trap / count
+│              │  flow-miss: pass-through
+└──────┬───────┘
+       │                  │ trap
+       │ fwd/modify/miss  ▼
+       │            AXI DMA S2MM
+       │            → DDR → PS
+       ▼
+┌──────────────┐
+│ elastic FIFO │  Absorbs TX-side backpressure
+└──────┬───────┘
+       │
+       ▼
+    axi_tx
+       │
+       ▼
+MAC / PHY
 ```
 
 Each parser stage registers the incoming AXI-Stream and forwards it downstream with a 1-cycle latency, keeping data aligned with the ready signals generated in parallel.
@@ -96,7 +111,7 @@ Each parser stage registers the incoming AXI-Stream and forwards it downstream w
 
 - 1024 entries, BRAM-backed, indexed by `flow_id`
 - Entry fields: `drop`, `forward`, `modify`, `out_port[3:0]`, `trap`, `count`, `valid`, `dst_mac[47:0]`, `src_mac[47:0]`
-- Modify action requires 5 × 32-bit writes (flags + 3 MAC words)
+- Modify action requires 7 × 32-bit writes (flags + 3 MAC words + 2 IP words + ports word)
 - Programmed by PS via AXI-Lite
 
 ---
@@ -141,6 +156,7 @@ Address bits `[31:30]` select the target:
 |   ├── TESTBENCH_GUIDE.md    # Guide on how to use TB
 │   ├── TODO.md               # What needs to be done
 |   ├── verification_plan.md  # Verification checklist
+│   ├── zynq_dataplane.drawio # Block diagram
 │   └── Zynq Networking Dataplane Specifications
 |
 ├── pl/
@@ -163,10 +179,10 @@ Address bits `[31:30]` select the target:
 │   │   │   ├── flow_table.sv      # 1024-entry BRAM hash table
 │   │   │   └── action_stage.sv    # Per-flow action execution
 │   │   ├── observability/
-│   │   │   ├── timestamp.sv
-│   │   │   ├── latency_monitor.sv
-│   │   │   ├── throughput_counter.sv
-│   │   │   └── error_counter.sv
+│   │   │   ├── timestamp.sv       # (stub)
+│   │   │   ├── latency_monitor.sv # (stub)
+│   │   │   ├── throughput_counter.sv # (stub)
+│   │   │   └── error_counter.sv   # (stub)
 │   │   └── top/
 │   │       ├── dataplane_top.sv   # Full pipeline instantiation
 │   │       ├── zynq_wrapper.sv    # PS/PL integration (Vivado block design)
