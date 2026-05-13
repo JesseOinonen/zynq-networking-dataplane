@@ -1,6 +1,6 @@
 package dataplane_pkg;
     // CSR word offsets (32-bit words)
-    localparam CSR_CTRL     = 4'h1;   // 0x04
+    localparam DP_CTRL     = 4'h1;   // 0x04
     // Flow key / parser status (read-only)
     localparam DST_MAC_L    = 4'h2;   // 0x08
     localparam DST_MAC_H    = 4'h3;   // 0x0C

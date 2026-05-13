@@ -19,13 +19,12 @@ class axi_lite_driver extends uvm_driver #(axi_lite_seq_item);
         axi_lite_seq_item req;
         forever begin
             seq_item_port.get_next_item(req);
-            `uvm_info("AXI_DRV", req.convert2string(), UVM_MEDIUM);
             if (req.we) begin
-                // Perform AXI Lite write transaction
+                `uvm_info("AXI_DRV", req.convert2string(), UVM_MEDIUM);
                 axi_vif.write(req.addr, req.data);
             end else begin
-                // Perform AXI Lite read transaction
                 axi_vif.read(req.addr, req.data);
+                `uvm_info("AXI_DRV", req.convert2string(), UVM_MEDIUM);
             end
             seq_item_port.item_done();
         end

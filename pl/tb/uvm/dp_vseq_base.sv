@@ -9,6 +9,22 @@ class dp_vseq_base extends uvm_sequence #(uvm_sequence_item);
         super.new(name);
     endfunction
 
+    task axi4_write(input logic [31:0] addr, input logic [31:0] data);
+        axi_lite_write_seq wr_seq;
+        wr_seq      = axi_lite_write_seq::type_id::create("wr_seq");
+        wr_seq.addr = addr;
+        wr_seq.data = data;
+        wr_seq.start(axi_lite_seqr);
+    endtask
+
+    task axi4_read(input logic [31:0] addr, output logic [31:0] data);
+        axi_lite_read_seq rd_seq;
+        rd_seq      = axi_lite_read_seq::type_id::create("rd_seq");
+        rd_seq.addr = addr;
+        rd_seq.start(axi_lite_seqr);
+        data = rd_seq.data;
+    endtask
+
     task body();
     endtask
 

@@ -143,12 +143,12 @@ class my_vseq extends dp_vseq_base;
         axi_lite_read_seq  rd;
 
         wr = axi_lite_write_seq::type_id::create("wr");
-        wr.addr = `CSR_CTRL;
+        wr.addr = `DP_CTRL;
         wr.data = 32'hDEADBEEF;
         wr.start(axi_lite_seqr);
 
         rd = axi_lite_read_seq::type_id::create("rd");
-        rd.addr = `CSR_CTRL;
+        rd.addr = `DP_CTRL;
         rd.start(axi_lite_seqr);
 
         if (rd.data !== 32'hDEADBEEF)

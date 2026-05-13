@@ -11,6 +11,7 @@ module flow_table #(
     input  logic [31:0]             wdata,           // AXI4-Lite write data
     input  logic                    we,              // AXI4-Lite write enable
     input  logic                    sop_in,
+    input  logic                    flush,
     output logic                    flow_hit,        // Flow table hit
     output logic [9:0]              flow_id,         // Flow id from flow table
     output logic                    wdone,           // AXI4-Lite write done 
@@ -81,7 +82,7 @@ end
 
 // Write flow_table from PS (AXI4-lite, 32bits at a time)
 always_ff @(posedge clk) begin
-    if (rst) begin
+    if (rst || flush) begin
         wr_cnt         <= '0;
         wdone          <= 1'b0;
         wr_entry_tmp   <= '0;

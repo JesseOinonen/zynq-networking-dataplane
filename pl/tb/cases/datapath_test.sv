@@ -1,0 +1,38 @@
+class datapath_vseq extends dp_vseq_base;
+
+    `uvm_object_utils(datapath_vseq)
+
+    function new(string name = "datapath_vseq");
+        super.new(name);
+    endfunction
+
+    task body();
+        #10ns;
+        // Enable dataplane
+        axi4_write(`DP_CTRL, 32'h1);
+
+        #10us;
+
+        // PUSH DATA TO AXI_RX AND READ DATA FROM AXI_TX, make variations and different action stage modes to determine correct functionality
+        // TBD!
+
+        `uvm_info("DATAPATH_TEST", "datapath_testcase completed", UVM_LOW)
+    endtask
+
+endclass
+
+class datapath_test extends dp_test_base;
+    `uvm_component_utils(datapath_test)
+
+    function new(string name, uvm_component parent);
+        super.new(name, parent);
+    endfunction
+
+    virtual task run_test_body(uvm_phase phase);
+        datapath_vseq vseq = datapath_vseq::type_id::create("vseq");
+        vseq.axi_lite_seqr   = env.axi_agent.seqr;
+        vseq.axi_stream_seqr = env.stream_agent.seqr;
+        vseq.start(null);
+    endtask
+
+endclass

@@ -35,9 +35,7 @@ typedef struct packed {
     logic        drop;
     logic        forward;
     logic        modify;
-    logic [3:0]  out_port;
     logic        trap;
-    logic        count;
     logic        valid;
     logic [9:0]  flow_id;
     // L2
@@ -75,13 +73,11 @@ always_ff @(posedge clk) begin
         wdone <= 1'b0;
         if (we && !wdone) begin
             if (axi_w_counter < 1) begin
-                action_table[waddr].drop     <= wdata[0];
-                action_table[waddr].forward  <= wdata[1];
-                action_table[waddr].modify   <= wdata[2];
-                action_table[waddr].out_port <= wdata[6:3];
-                action_table[waddr].trap     <= wdata[7];
-                action_table[waddr].count    <= wdata[8];
-                action_table[waddr].valid    <= !wdata[2]; // If not modify, then action is valid, else we need more writes to get modified macs
+                action_table[waddr].drop    <= wdata[0];
+                action_table[waddr].forward <= wdata[1];
+                action_table[waddr].modify  <= wdata[2];
+                action_table[waddr].trap    <= wdata[3];
+                action_table[waddr].valid   <= !wdata[2]; // If not modify, then action is valid, else we need more writes to get modified macs
                 action_table[waddr].flow_id  <= waddr;
                 axi_w_counter                <= wdata[2];  // Set counter to 1 if modify action is expected, else 0 to accept new entries
                 waddr_ff                     <= waddr;     // capture address for modify action check

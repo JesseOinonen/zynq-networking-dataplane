@@ -7,14 +7,12 @@ class action_stage_vseq extends dp_vseq_base;
     endfunction
 
     task body();
-        axi_lite_write_seq wr_seq;
+        #10ns;
+        // Enable dataplane
+        axi4_write(`DP_CTRL, 32'h1);
 
         #10ns;
-
-        wr_seq      = axi_lite_write_seq::type_id::create("wr_seq");
-        wr_seq.addr = `CSR_ACTION_CTRL;
-        wr_seq.data = 32'h2;
-        wr_seq.start(axi_lite_seqr);
+        axi4_write(`CSR_ACTION_CTRL, 32'h2);
 
         #10us;
 

@@ -9,7 +9,7 @@ SIM_DIR_ABS := $(abspath $(SIM_DIR))
 SCRIPTS_DIR := ../../../flow/scripts
 
 TEST ?= axi4_lite_test
-TESTS := axi4_lite_test parser_test flow_key_gen_test flow_table_test action_stage_test
+TESTS := axi4_lite_test parser_test flow_key_gen_test flow_table_test action_stage_test datapath_test
 
 .PHONY: all build sim regression gui clean
 
@@ -52,6 +52,7 @@ regression: build
 	fi
 	@failed=0; \
 	passed=0; \
+	failed_tests=""; \
 	for t in $(TESTS); do \
 	  echo ""; \
 	  echo ">>> Running test: $$t"; \
@@ -62,6 +63,7 @@ regression: build
 	    echo "PASSED: $$t"; \
 	  else \
 	    failed=$$((failed+1)); \
+	    failed_tests="$$failed_tests $$t"; \
 	    echo "FAILED: $$t"; \
 	  fi; \
 	  rm -f "$$_log"; \
@@ -69,6 +71,12 @@ regression: build
 	echo ""; \
 	echo "================================================"; \
 	echo "REGRESSION COMPLETE: $$passed passed, $$failed failed"; \
+	if [ $$failed -gt 0 ]; then \
+	  echo "Failed tests:"; \
+	  for ft in $$failed_tests; do \
+	    echo "  - $$ft"; \
+	  done; \
+	fi; \
 	echo "================================================"; \
 	[ $$failed -eq 0 ]
 
@@ -76,6 +84,10 @@ regression: build
 gui: build
 	@echo "Opening Vivado GUI for test: $(TEST)"
 	cd $(BUILD) && $(VIVADO) -mode gui -source $(SCRIPTS_DIR)/sim.tcl -tclargs $(TEST) &
+
+# Create a new UVM test skeleton: make testcase-<testname>
+testcase-%:
+	python3 flow/scripts/new_test.py $*
 
 clean:
 	@echo "Cleaning build directory..."
