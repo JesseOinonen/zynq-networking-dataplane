@@ -52,16 +52,6 @@ typedef struct packed {
 // action_table BRAM / 1024 entrys
 (* ram_style = "block" *) action_t action_table [0:1023];
 
-// Header detection for modify action
-always_ff @(posedge clk) begin
-    if (sop_in) begin
-        header_detected <= 1'b1;
-    end
-    else if (modify_done) begin
-        header_detected <= 1'b0;
-    end
-end
-
 // AXI4-Lite write to Action Table
 always_ff @(posedge clk) begin
     if (rst) begin
