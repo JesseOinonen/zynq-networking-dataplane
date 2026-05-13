@@ -175,6 +175,12 @@ always_ff @(posedge clk) begin
             end
        end
     end
+    else begin
+        tdata_out        <= tdata_in;
+        tvalid_out       <= tvalid_in;
+        tkeep_out        <= tkeep_in;
+        tlast_out        <= tlast_in;
+    end
 end
 
 endmodule
