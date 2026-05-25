@@ -22,6 +22,18 @@ logic [7:0]  tkeep_tx;
 logic        tlast_tx;
 logic        tready_tx;
 
+// AXI Stream signals for PS DMA
+logic        tvalid_mm2s;
+logic [63:0] tdata_mm2s;
+logic [7:0]  tkeep_mm2s;
+logic        tlast_mm2s;
+logic        tready_mm2s;
+logic        tvalid_s2mm;
+logic [63:0] tdata_s2mm;
+logic [7:0]  tkeep_s2mm;
+logic        tlast_s2mm;
+logic        tready_s2mm;
+
 // AXI4-Lite Write Task
 task automatic write(input logic [31:0] addr, input logic [31:0] data);
     @(posedge clk);

@@ -1,7 +1,7 @@
 module dataplane_top #(
     parameter DATA_WIDTH = 64
 )(
-    input  logic                    clk125,
+    input  logic                    clk,
     input  logic                    rst,
     // AXI4-Lite interface
     input  logic [31:0]             AWADDR,  
@@ -34,7 +34,20 @@ module dataplane_top #(
     output logic [DATA_WIDTH-1:0]   tdata_out,
     output logic [DATA_WIDTH/8-1:0] tkeep_out,
     output logic                    tlast_out,
-    input  logic                    tready_in
+    input  logic                    tready_in,
+    // AXI DMA MM2S input (PS → verkko)
+    input  logic [DATA_WIDTH-1:0]   tdata_mm2s,
+    input  logic                    tvalid_mm2s,
+    input  logic [DATA_WIDTH/8-1:0] tkeep_mm2s,
+    input  logic                    tlast_mm2s,
+    output logic                    tready_mm2s,
+
+    // AXI DMA S2MM output (trap → PS)
+    output logic [DATA_WIDTH-1:0]   tdata_s2mm,
+    output logic                    tvalid_s2mm,
+    output logic [DATA_WIDTH/8-1:0] tkeep_s2mm,
+    output logic                    tlast_s2mm,
+    input  logic                    tready_s2mm
 );
 
 logic [31:0]                     waddr_sig;
@@ -132,6 +145,11 @@ logic                            act_tvalid_sig;
 logic [DATA_WIDTH-1:0]           act_tdata_sig;
 logic [DATA_WIDTH/8-1:0]         act_tkeep_sig;
 logic                            act_tlast_sig;
+logic                            tvalid_mux;
+logic [DATA_WIDTH-1:0]           tdata_mux;
+logic [DATA_WIDTH/8-1:0]         tkeep_mux;
+logic                            tlast_mux;
+logic                            tready_mux;
 
 // Output mux: loopback bypasses dataplane
 assign tvalid_out = loopback ? rx_tvalid_sig : act_tvalid_sig;
@@ -140,7 +158,7 @@ assign tkeep_out  = loopback ? rx_tkeep_sig  : act_tkeep_sig;
 assign tlast_out  = loopback ? rx_tlast_sig  : act_tlast_sig;
 
 action_stage #(.DATA_WIDTH(DATA_WIDTH)) u_action_stage (
-    .clk(clk125),
+    .clk(clk),
     .rst(rst),
     .flow_hit(flow_hit_sig),
     .flow_id(flow_id_sig),
@@ -187,7 +205,7 @@ axi_addr_decode u_axi_addr_decode (
 );
 
 axi_lite_slave u_axi_lite_slave (
-    .clk(clk125),
+    .clk(clk),
     .rst(rst),
     .AWADDR(AWADDR),  
     .AWPROT(AWPROT),  
@@ -219,7 +237,7 @@ axi_lite_slave u_axi_lite_slave (
 );
 
 axi_rx #(.DATA_WIDTH(DATA_WIDTH)) u_axi_rx (
-    .clk(clk125),
+    .clk(clk),
     .rst(rst),
     .tvalid(tvalid_in),
     .tdata(tdata_in),
@@ -236,8 +254,42 @@ axi_rx #(.DATA_WIDTH(DATA_WIDTH)) u_axi_rx (
     .enable(enable)
 );
 
+axi_tx #(.DATA_WIDTH(DATA_WIDTH)) u_axi_tx (
+    .clk(clk),
+    .rst(rst),
+    .tvalid_mux(tvalid_mux),
+    .tdata_mux(tdata_mux),
+    .tkeep_mux(tkeep_mux),
+    .tlast_mux(tlast_mux),
+    .tready_mux(tready_mux),
+    .tready_out(tready_in),
+    .tvalid_out(tvalid_out),
+    .tdata_out(tdata_out),
+    .tkeep_out(tkeep_out),
+    .tlast_out(tlast_out)
+);
+
+axis_mux #(.DATA_WIDTH(DATA_WIDTH)) u_axis_mux (
+    .clk(clk),
+    .rst(rst),
+    .tvalid_dp(act_tvalid_sig),
+    .tdata_dp(act_tdata_sig),
+    .tkeep_dp(act_tkeep_sig),
+    .tlast_dp(act_tlast_sig),
+    .tvalid_dma(tvalid_mm2s),
+    .tdata_dma(tdata_mm2s),
+    .tkeep_dma(tkeep_mm2s),
+    .tlast_dma(tlast_mm2s),
+    .tready_dma(tready_mm2s),
+    .tready(tready_mux),
+    .tvalid(tvalid_mux),
+    .tdata(tdata_mux),
+    .tkeep(tkeep_mux),
+    .tlast(tlast_mux)
+);
+
 csr u_csr (
-    .clk(clk125),
+    .clk(clk),
     .rst(rst),
     .waddr(waddr_csr_sig), 
     .wdata(wdata_csr_sig), 
@@ -271,7 +323,7 @@ csr u_csr (
 );
 
 eth_parser #(.DATA_WIDTH(DATA_WIDTH)) u_eth_parser (
-    .clk(clk125),
+    .clk(clk),
     .rst(rst),
     .tkeep_in(rx_tkeep_sig),
     .tdata_in(rx_tdata_sig),
@@ -293,7 +345,7 @@ eth_parser #(.DATA_WIDTH(DATA_WIDTH)) u_eth_parser (
 );
 
 flow_key_gen u_flow_key_gen (
-    .clk(clk125),
+    .clk(clk),
     .rst(rst),
     .eth_type(eth_type_sig),
     .eth_parser_ready(eth_parser_ready_sig),
@@ -321,7 +373,7 @@ flow_key_gen u_flow_key_gen (
 );
 
 flow_table u_flow_table (
-    .clk(clk125),
+    .clk(clk),
     .rst(rst),
     .flow_key(flow_key_sig),
     .flow_key_valid(valid_flow_key_sig),
@@ -345,7 +397,7 @@ flow_table u_flow_table (
 );
 
 ipv4_parser #(.DATA_WIDTH(DATA_WIDTH)) u_ipv4_parser (
-    .clk(clk125),
+    .clk(clk),
     .rst(rst),
     .tkeep_in(tkeep_eth_sig),
     .tdata_in(tdata_eth_sig),
@@ -369,7 +421,7 @@ ipv4_parser #(.DATA_WIDTH(DATA_WIDTH)) u_ipv4_parser (
 );
 
 udp_tcp_parser #(.DATA_WIDTH(DATA_WIDTH)) u_udp_tcp_parser (
-    .clk(clk125),
+    .clk(clk),
     .rst(rst),
     .tkeep_in(tkeep_ipv4_sig),
     .tlast_in(tlast_ipv4_sig),
