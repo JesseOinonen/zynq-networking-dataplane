@@ -35,7 +35,7 @@ module dataplane_top #(
     output logic [DATA_WIDTH/8-1:0] tkeep_out,
     output logic                    tlast_out,
     input  logic                    tready_in,
-    // AXI DMA MM2S input (PS → verkko)
+    // AXI DMA MM2S input (PS → axi_tx)
     input  logic [DATA_WIDTH-1:0]   tdata_mm2s,
     input  logic                    tvalid_mm2s,
     input  logic [DATA_WIDTH/8-1:0] tkeep_mm2s,
