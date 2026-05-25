@@ -23,6 +23,7 @@ module flow_key_gen #(
     input  logic [DATA_WIDTH-1:0]   tdata_in,
     input  logic [DATA_WIDTH/8-1:0] tkeep_in,
     input  logic                    tlast_in,
+    input  logic                    tready_in,
     output logic                    tvalid_out = 1'b0,
     output logic [DATA_WIDTH-1:0]   tdata_out  = '0,
     output logic [DATA_WIDTH/8-1:0] tkeep_out  = '0,
@@ -44,11 +45,13 @@ logic [15:0] dst_port_capt;
 assign gen_flow_key = eth_captured && (eth_type_capt == 16'h0800) && ipv4_captured && udp_tcp_captured;
 
 always_ff @(posedge clk) begin
-    tvalid_out <= tvalid_in;
-    tdata_out  <= tdata_in;
-    tkeep_out  <= tkeep_in;
-    tlast_out  <= tlast_in;
-    sop_out    <= sop_in;
+    if (tready_in) begin
+        tvalid_out <= tvalid_in;
+        tdata_out  <= tdata_in;
+        tkeep_out  <= tkeep_in;
+        tlast_out  <= tlast_in;
+        sop_out    <= sop_in;
+    end
 end
 
 always_ff @(posedge clk) begin
@@ -66,56 +69,58 @@ always_ff @(posedge clk) begin
         flow_key         <= '0;
     end
     else begin
-        // Flow key should remain valid for the duartion of the packet
-        if (tlast_in) begin
-          valid_flow_key <= 1'b0;
-        end
-        
-        if (eth_captured && eth_type_capt != 16'h0800) begin
-            eth_captured     <= 1'b0;
-            ipv4_captured    <= 1'b0;
-            udp_tcp_captured <= 1'b0;
-        end
-
-        if (eth_parser_ready && !eth_captured) begin
-            eth_type_capt <= eth_type;
-            eth_captured  <= 1'b1;
-        end
-
-        if (ipv4_parser_ready && !ipv4_captured) begin
-            src_ip_capt   <= src_ip;
-            dst_ip_capt   <= dst_ip;
-            protocol_capt <= protocol;
-            ipv4_captured <= 1'b1;
-        end
-
-        if (udp_tcp_parser_ready && !udp_tcp_captured) begin
-            if (protocol_capt == 17) begin
-                src_port_capt <= udp_src_port;
-                dst_port_capt <= udp_dst_port;
+        if (tready_in) begin
+            // Flow key should remain valid for the duartion of the packet
+            if (tlast_in) begin
+            valid_flow_key <= 1'b0;
             end
-            else if (protocol_capt == 6) begin
-                src_port_capt <= tcp_src_port;
-                dst_port_capt <= tcp_dst_port;
+            
+            if (eth_captured && eth_type_capt != 16'h0800) begin
+                eth_captured     <= 1'b0;
+                ipv4_captured    <= 1'b0;
+                udp_tcp_captured <= 1'b0;
             end
-            udp_tcp_captured <= 1'b1;
-        end
 
-        // FLOW KEY SHOULD BE VALID FOR WHOLE PACKET so action stage can rely on the flow hits etc. 
-        // (Otherwise if flow key goes in valid between the packet then data coming after the header is not directed accordingly)
-        // Flow key should be generated once for each packet
-        if (gen_flow_key) begin
-            flow_key <= {8'h0,
-                        eth_type_capt,
-                        src_ip_capt,
-                        dst_ip_capt,
-                        src_port_capt,
-                        dst_port_capt,
-                        protocol_capt};
-            valid_flow_key   <= 1'b1;
-            eth_captured     <= 1'b0;
-            ipv4_captured    <= 1'b0;
-            udp_tcp_captured <= 1'b0;
+            if (eth_parser_ready && !eth_captured) begin
+                eth_type_capt <= eth_type;
+                eth_captured  <= 1'b1;
+            end
+
+            if (ipv4_parser_ready && !ipv4_captured) begin
+                src_ip_capt   <= src_ip;
+                dst_ip_capt   <= dst_ip;
+                protocol_capt <= protocol;
+                ipv4_captured <= 1'b1;
+            end
+
+            if (udp_tcp_parser_ready && !udp_tcp_captured) begin
+                if (protocol_capt == 17) begin
+                    src_port_capt <= udp_src_port;
+                    dst_port_capt <= udp_dst_port;
+                end
+                else if (protocol_capt == 6) begin
+                    src_port_capt <= tcp_src_port;
+                    dst_port_capt <= tcp_dst_port;
+                end
+                udp_tcp_captured <= 1'b1;
+            end
+
+            // FLOW KEY SHOULD BE VALID FOR WHOLE PACKET so action stage can rely on the flow hits etc. 
+            // (Otherwise if flow key goes in valid between the packet then data coming after the header is not directed accordingly)
+            // Flow key should be generated once for each packet
+            if (gen_flow_key) begin
+                flow_key <= {8'h0,
+                            eth_type_capt,
+                            src_ip_capt,
+                            dst_ip_capt,
+                            src_port_capt,
+                            dst_port_capt,
+                            protocol_capt};
+                valid_flow_key   <= 1'b1;
+                eth_captured     <= 1'b0;
+                ipv4_captured    <= 1'b0;
+                udp_tcp_captured <= 1'b0;
+            end
         end
     end
 end

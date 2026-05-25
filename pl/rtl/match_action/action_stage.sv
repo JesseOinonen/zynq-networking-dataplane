@@ -18,6 +18,7 @@ module action_stage #(
     input  logic                    tvalid_in,
     input  logic                    tlast_in,
     input  logic [DATA_WIDTH/8-1:0] tkeep_in,
+    input  logic                    tready_in,
     output logic [DATA_WIDTH-1:0]   tdata_out  = '0,
     output logic                    tvalid_out = 1'b0,
     output logic                    tlast_out  = 1'b0,
@@ -29,7 +30,6 @@ logic [9:0] waddr_ff; // Registered address for modify action check
 
 logic       modify_done     = 1'b0;
 logic [1:0] modify_counter  = '0;
-logic       header_detected = 1'b0; // Signal to indicate the first beat of the packet for modify action
 
 typedef struct packed {
     logic        drop;
@@ -106,66 +106,69 @@ end
 
 // Action Stage
 always_ff @(posedge clk) begin
-    trap <= 1'b0;
-    if (flow_hit) begin
-       if (action_table[flow_id].valid && action_table[flow_id].flow_id == flow_id) begin
-            if (action_table[flow_id].drop) begin
-                tvalid_out <= 1'b0;
-            end
-            else if (action_table[flow_id].forward) begin
-                tdata_out  <= tdata_in;
-                tvalid_out <= tvalid_in;
-                tlast_out  <= tlast_in;
-                tkeep_out  <= tkeep_in;
-            end
-            else if (action_table[flow_id].modify) begin
-                if (!modify_done) begin
-                    if (modify_counter == 0) begin
-                        tdata_out[31:0]  <= action_table[flow_id].dst_mac[31:0];
-                        tdata_out[47:32] <= action_table[flow_id].dst_mac[47:32];
-                        tdata_out[63:48] <= action_table[flow_id].src_mac[15:0];
-                        tvalid_out       <= 1'b1;
-                        tkeep_out        <= '1;
-                        tlast_out        <= tlast_in;
-                        modify_counter <= modify_counter + 1;
+    if (tready_in) begin
+        trap <= 1'b0;
+        if (flow_hit) begin
+        if (action_table[flow_id].valid && action_table[flow_id].flow_id == flow_id) begin
+                if (action_table[flow_id].drop) begin
+                    tvalid_out <= 1'b0;
+                end
+                else if (action_table[flow_id].forward) begin
+                    tdata_out  <= tdata_in;
+                    tvalid_out <= tvalid_in;
+                    tlast_out  <= tlast_in;
+                    tkeep_out  <= tkeep_in;
+                end
+                else if (action_table[flow_id].modify) begin
+                    if (!modify_done) begin
+                        if (modify_counter == 0) begin
+                            tdata_out[31:0]  <= action_table[flow_id].dst_mac[31:0];
+                            tdata_out[47:32] <= action_table[flow_id].dst_mac[47:32];
+                            tdata_out[63:48] <= action_table[flow_id].src_mac[15:0];
+                            tvalid_out       <= 1'b1;
+                            tkeep_out        <= '1;
+                            tlast_out        <= tlast_in;
+                            modify_counter <= modify_counter + 1;
+                        end
+                        else if (modify_counter == 1) begin
+                            tdata_out[31:0]  <= action_table[flow_id].src_mac[47:16];
+                            tdata_out[63:32] <= action_table[flow_id].dst_ip;
+                            tvalid_out       <= 1'b1;
+                            tkeep_out        <= '1;
+                            tlast_out        <= tlast_in;
+                            modify_counter   <= modify_counter + 1;
+                        end
+                        else if (modify_counter == 2) begin
+                            tdata_out[31:0]   <= action_table[flow_id].src_ip;
+                            tdata_out[63:32]  <= {action_table[flow_id].dst_port, action_table[flow_id].src_port};
+                            tvalid_out        <= 1'b1;
+                            tkeep_out         <= '1;
+                            tlast_out         <= tlast_in;
+                            modify_done       <= 1'b1;
+                            modify_counter    <= '0;
+                        end
                     end
-                    else if (modify_counter == 1) begin
-                        tdata_out[31:0]  <= action_table[flow_id].src_mac[47:16];
-                        tdata_out[63:32] <= action_table[flow_id].dst_ip;
-                        tvalid_out       <= 1'b1;
-                        tkeep_out        <= '1;
+                    else begin
+                        tdata_out        <= tdata_in;
+                        tvalid_out       <= tvalid_in;
+                        tkeep_out        <= tkeep_in;
                         tlast_out        <= tlast_in;
-                        modify_counter   <= modify_counter + 1;
-                    end
-                    else if (modify_counter == 2) begin
-                        tdata_out[31:0]   <= action_table[flow_id].src_ip;
-                        tdata_out[63:32]  <= {action_table[flow_id].dst_port, action_table[flow_id].src_port};
-                        tvalid_out        <= 1'b1;
-                        tkeep_out         <= '1;
-                        tlast_out         <= tlast_in;
-                        modify_done       <= 1'b1;
-                        modify_counter    <= '0;
+                        if (tlast_in) modify_done <= 1'b0; // Reset for next packet
                     end
                 end
-                else begin
-                    tdata_out        <= tdata_in;
-                    tvalid_out       <= tvalid_in;
-                    tkeep_out        <= tkeep_in;
-                    tlast_out        <= tlast_in;
-                    if (tlast_in) modify_done <= 1'b0; // Reset for next packet
+                // If trap bit is set, we can set trap signal here and let PS handle the trapped packet (e.g., send to CPU port and drop or forward)
+                // Do we want to send a copy to cpu and then drop the original or forward it through pipeline?
+                if (action_table[flow_id].trap) begin
+                    trap <= 1'b1;
                 end
-            end
-            // If trap bit is set, we can set trap signal here and let PS handle the trapped packet (e.g., send to CPU port or drop)
-            if (action_table[flow_id].trap) begin
-                trap <= 1'b1;
-            end
-       end
-    end
-    else begin
-        tdata_out        <= tdata_in;
-        tvalid_out       <= tvalid_in;
-        tkeep_out        <= tkeep_in;
-        tlast_out        <= tlast_in;
+        end
+        end
+        else begin
+            tdata_out        <= tdata_in;
+            tvalid_out       <= tvalid_in;
+            tkeep_out        <= tkeep_in;
+            tlast_out        <= tlast_in;
+        end
     end
 end
 

@@ -6,7 +6,7 @@ add_files [glob ../../../pl/rtl/axi/*.sv]
 add_files [glob ../../../pl/rtl/parser/*.sv]
 add_files [glob ../../../pl/rtl/top/*.sv]
 add_files [glob ../../../pl/rtl/match_action/*.sv]
-# add_files [glob ../../../pl/rtl/observability/*.sv]
+add_files [glob ../../../pl/rtl/observability/*.sv]
 
 # Testbench files
 # top/*.sv = interface, clock/reset generators, testbench top (independent modules)

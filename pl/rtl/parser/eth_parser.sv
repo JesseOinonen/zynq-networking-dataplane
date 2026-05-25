@@ -16,7 +16,8 @@ module eth_parser #(
     output logic [ 3:0]             wcnt_eth,
     output logic                    in_packet_out = 1'b0,
     output logic                    sop_out       = 1'b0,
-    // AXI stream outputs (pass through)
+    // AXI stream
+    input  logic                    tready_in,
     output logic [DATA_WIDTH-1:0]   tdata_out  = '0,
     output logic [DATA_WIDTH/8-1:0] tkeep_out  = '0,
     output logic                    tvalid_out = 1'b0,
@@ -29,12 +30,14 @@ logic       done;
 
 // Pass through the data to ipv4 parser
 always_ff @(posedge clk) begin
-    tdata_out     <= tdata_in;
-    tkeep_out     <= tkeep_in;
-    tvalid_out    <= tvalid_in;
-    tlast_out     <= tlast_in;
-    in_packet_out <= in_packet;
-    sop_out       <= sop;
+    if (tready_in) begin
+        tdata_out     <= tdata_in;
+        tkeep_out     <= tkeep_in;
+        tvalid_out    <= tvalid_in;
+        tlast_out     <= tlast_in;
+        in_packet_out <= in_packet;
+        sop_out       <= sop;
+    end
 end
 
 // Ethernet header parsing
@@ -48,29 +51,31 @@ always_ff @(posedge clk) begin
         wcnt_eth         <= '0;
     end
     else begin
-        wcnt_eth <= '0;
-        if (tvalid_in && !eth_parser_ready) begin
-            wcnt = 0;
-            done = 1'b0;
-            for (int i = 0; i < DATA_WIDTH/8; i++) begin
-                if (!done && tkeep_in[i]) begin
-                    if ((counter + wcnt) < 6)       dst_mac[(5 - (counter + wcnt))*8 +: 8]   <= tdata_in[i*8 +: 8];
-                    else if ((counter + wcnt) < 12) src_mac[(11 - (counter + wcnt))*8 +: 8]  <= tdata_in[i*8 +: 8];
-                    else if ((counter + wcnt) < 14) eth_type[(13 - (counter + wcnt))*8 +: 8] <= tdata_in[i*8 +: 8];
-                    wcnt++;
-                    if ((counter + wcnt) >= 14) begin
-                        eth_parser_ready <= 1'b1;
-                        wcnt_eth <= wcnt;
-                        done = 1'b1;
-                        wcnt = 0;
+        if (tready_in) begin
+            wcnt_eth <= '0;
+            if (tvalid_in && !eth_parser_ready) begin
+                wcnt = 0;
+                done = 1'b0;
+                for (int i = 0; i < DATA_WIDTH/8; i++) begin
+                    if (!done && tkeep_in[i]) begin
+                        if ((counter + wcnt) < 6)       dst_mac[(5 - (counter + wcnt))*8 +: 8]   <= tdata_in[i*8 +: 8];
+                        else if ((counter + wcnt) < 12) src_mac[(11 - (counter + wcnt))*8 +: 8]  <= tdata_in[i*8 +: 8];
+                        else if ((counter + wcnt) < 14) eth_type[(13 - (counter + wcnt))*8 +: 8] <= tdata_in[i*8 +: 8];
+                        wcnt++;
+                        if ((counter + wcnt) >= 14) begin
+                            eth_parser_ready <= 1'b1;
+                            wcnt_eth <= wcnt;
+                            done = 1'b1;
+                            wcnt = 0;
+                        end
                     end
                 end
+                if (done) counter <= '0;
+                else      counter <= counter + wcnt;
             end
-            if (done) counter <= '0;
-            else      counter <= counter + wcnt;
-        end
-        if (sop) begin
-            eth_parser_ready <= 1'b0;
+            if (sop) begin
+                eth_parser_ready <= 1'b0;
+            end
         end
     end
 end

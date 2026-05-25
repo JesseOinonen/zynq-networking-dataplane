@@ -21,6 +21,7 @@ module flow_table #(
     input  logic [DATA_WIDTH-1:0]   tdata_in,
     input  logic [DATA_WIDTH/8-1:0] tkeep_in,
     input  logic                    tlast_in,
+    input  logic                    tready_in,
     output logic                    tvalid_out = 1'b0,
     output logic [DATA_WIDTH-1:0]   tdata_out  = '0,
     output logic [DATA_WIDTH/8-1:0] tkeep_out  = '0,
@@ -52,11 +53,13 @@ assign hash     = flow_key[15:0]   ^ flow_key[31:16]  ^ flow_key[47:32]  ^ flow_
 assign hash_idx = hash[9:0] ^ {4'b0, hash[15:10]};
 
 always_ff @(posedge clk) begin
-    tvalid_out <= tvalid_in;
-    tdata_out  <= tdata_in;
-    tkeep_out  <= tkeep_in;
-    tlast_out  <= tlast_in;
-    sop_out    <= sop_in;
+    if (tready_in) begin
+        tvalid_out <= tvalid_in;
+        tdata_out  <= tdata_in;
+        tkeep_out  <= tkeep_in;
+        tlast_out  <= tlast_in;
+        sop_out    <= sop_in;
+    end
 end
 
 always_ff @(posedge clk) begin
@@ -68,15 +71,17 @@ always_ff @(posedge clk) begin
         rd_entry   <= '0;
     end
     else begin
-        if (flow_key_valid) begin
-            addr       <= hash_idx;
-            flow_key_d <= flow_key;
-        end
+        if (tready_in) begin
+            if (flow_key_valid) begin
+                addr       <= hash_idx;
+                flow_key_d <= flow_key;
+            end
 
-        rd_entry <= flow_table[addr];
-        // flow_hit and flow_id should remain stable for the whole packet (as long as flow_key is also held stable for the duration of incoming packet)
-        flow_hit <= rd_entry.valid && (rd_entry.key == flow_key_d);
-        flow_id  <= rd_entry.id;
+            rd_entry <= flow_table[addr];
+            // flow_hit and flow_id should remain stable for the whole packet (as long as flow_key is also held stable for the duration of incoming packet)
+            flow_hit <= rd_entry.valid && (rd_entry.key == flow_key_d);
+            flow_id  <= rd_entry.id;
+        end
     end
 end
 

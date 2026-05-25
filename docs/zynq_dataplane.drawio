@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram id="_UyAKtelSGlHdJUBLD4U" name="Page-1">
-        <mxGraphModel dx="2248" dy="1155" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+        <mxGraphModel dx="899" dy="462" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -266,19 +266,14 @@
                         <mxPoint x="209" y="310" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="500" value="BUFFER?" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" parent="1" vertex="1">
-                    <mxGeometry x="590" y="295" width="130" height="50" as="geometry"/>
-                </mxCell>
-                <mxCell id="501" value="fwd / modify / miss" style="edgeStyle=orthogonalEdgeStyle;html=1;fontSize=9;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="80" target="500" edge="1">
-                    <mxGeometry x="1" y="10" relative="1" as="geometry">
+                <mxCell id="501" value="fwd / modify / miss" style="edgeStyle=orthogonalEdgeStyle;html=1;fontSize=9;exitX=1;exitY=0.25;exitDx=0;exitDy=0;" parent="1" source="80" edge="1">
+                    <mxGeometry x="-0.3066" y="13" relative="1" as="geometry">
                         <mxPoint as="offset"/>
+                        <mxPoint x="660" y="260" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="520" value="AXI-Stream MUX" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" parent="1" vertex="1">
                     <mxGeometry x="590" y="225" width="130" height="35" as="geometry"/>
-                </mxCell>
-                <mxCell id="521" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" source="500" target="520" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
                 <mxCell id="522" value="axi_tx" style="edgeStyle=orthogonalEdgeStyle;html=1;fontSize=9;fontStyle=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.08;entryY=1;entryDx=0;entryDy=0;" parent="1" source="520" target="30" edge="1">
                     <mxGeometry relative="1" as="geometry">

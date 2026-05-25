@@ -49,7 +49,7 @@ module top;
         .tdata_out   (tb_axi.tdata_tx),
         .tkeep_out   (tb_axi.tkeep_tx),
         .tlast_out   (tb_axi.tlast_tx),
-        .tready_in   (tb_axi.tready_tx),
+        .tready_mac  (tb_axi.tready_tx),
         .tdata_mm2s  (tb_axi.tdata_mm2s),
         .tvalid_mm2s (tb_axi.tvalid_mm2s),
         .tkeep_mm2s  (tb_axi.tkeep_mm2s),
@@ -75,10 +75,16 @@ module top;
         tb_axi.WSTRB      = '0;
         tb_axi.AWPROT     = '0;
         tb_axi.ARPROT     = '0;
-        tb_axi.tvalid_rx  = 0;
-        tb_axi.tdata_rx   = '0;
-        tb_axi.tkeep_rx   = '0;
-        tb_axi.tlast_rx   = 0;
+        tb_axi.tvalid_rx    = 0;
+        tb_axi.tdata_rx     = '0;
+        tb_axi.tkeep_rx     = '0;
+        tb_axi.tlast_rx     = 0;
+        tb_axi.tready_tx    = 1;   // MAC TX always ready by default
+        tb_axi.tvalid_mm2s  = 0;
+        tb_axi.tdata_mm2s   = '0;
+        tb_axi.tkeep_mm2s   = '0;
+        tb_axi.tlast_mm2s   = 0;
+        tb_axi.tready_s2mm  = 0;
 
         uvm_config_db#(virtual axi_if)::set(null, "uvm_test_top", "axi_vif", tb_axi);
 

@@ -121,7 +121,7 @@ task automatic read(input logic [31:0] addr, output logic [31:0] data);
     disable fork;
 endtask
 
-// AXI Stream send beat
+// AXI Stream send beat (MAC RX → dataplane)
 task automatic stream_send(input logic [63:0] data, input logic [7:0] keep, input logic last);
     tdata_rx  = data;
     tkeep_rx  = keep;
@@ -130,7 +130,7 @@ task automatic stream_send(input logic [63:0] data, input logic [7:0] keep, inpu
     fork
         begin
             wait (tready_rx);
-            @(posedge clk) 
+            @(posedge clk);
             tvalid_rx = 0;
         end
         begin
@@ -139,6 +139,86 @@ task automatic stream_send(input logic [63:0] data, input logic [7:0] keep, inpu
         end
     join_any
     disable fork;
+endtask
+
+// DMA MM2S send beat (PS → axis_mux → axi_tx, simulates PS injecting a packet to TX path)
+task automatic dma_mm2s_send(input logic [63:0] data, input logic [7:0] keep, input logic last);
+    tdata_mm2s  = data;
+    tkeep_mm2s  = keep;
+    tlast_mm2s  = last;
+    tvalid_mm2s = 1;
+    fork
+        begin
+            wait (tready_mm2s);
+            @(posedge clk);
+            tvalid_mm2s = 0;
+        end
+        begin
+            #500ns;
+            $error("Timeout waiting for tready_mm2s");
+        end
+    join_any
+    disable fork;
+endtask
+
+// DMA S2MM receive — asserts tready and captures one full packet from trap path
+// Returns captured beats in data_out[], beat count in beat_count.
+// NOTE: S2MM is tied off until AXI DMA IP is wired; task will timeout until then.
+task automatic dma_s2mm_recv(output logic [63:0] data_out[], output int beat_count);
+    logic [63:0] pkt[256];
+    int          n;
+    n           = 0;
+    tready_s2mm = 1;
+    fork
+        begin
+            forever begin
+                @(posedge clk);
+                if (tvalid_s2mm && tready_s2mm) begin
+                    pkt[n] = tdata_s2mm;
+                    n++;
+                    if (tlast_s2mm) break;
+                end
+            end
+            tready_s2mm = 0;
+        end
+        begin
+            #5us;
+            $error("Timeout waiting for S2MM packet");
+        end
+    join_any
+    disable fork;
+    beat_count = n;
+    data_out   = new[n];
+    foreach (data_out[i]) data_out[i] = pkt[i];
+endtask
+
+// AXI Stream TX sink — asserts tready_tx and captures one full packet from MAC TX output
+task automatic stream_recv(output logic [63:0] data_out[], output int beat_count);
+    logic [63:0] pkt[256];
+    int          n;
+    n         = 0;
+    tready_tx = 1;
+    fork
+        begin
+            forever begin
+                @(posedge clk);
+                if (tvalid_tx && tready_tx) begin
+                    pkt[n] = tdata_tx;
+                    n++;
+                    if (tlast_tx) break;
+                end
+            end
+            tready_tx = 0;
+        end
+        begin
+            #5us;
+            $error("Timeout waiting for TX packet");
+        end
+    join_any
+    disable fork;
+    beat_count = n;
+    data_out   = new[n];
+    foreach (data_out[i]) data_out[i] = pkt[i];
 endtask
 
 endinterface

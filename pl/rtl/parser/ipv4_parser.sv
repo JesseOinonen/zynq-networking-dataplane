@@ -17,7 +17,8 @@ module ipv4_parser #(
     output logic [7:0]              protocol,
     output logic [4:0]              wcnt_ipv4,
     output logic                    sop_out      = 1'b0,
-    // AxI stream outputs (pass through)
+    // AxI stream
+    input  logic                    tready_in,
     output logic [DATA_WIDTH-1:0]   tdata_out  = '0,
     output logic [DATA_WIDTH/8-1:0] tkeep_out  = '0,
     output logic                    tvalid_out = 1'b0,
@@ -36,12 +37,14 @@ assign ipv4_header_length = (ihl >= 5) ? (ihl << 2) : 6'd20;
 
 // Pass through the data to UDP/TCP parser
 always_ff @(posedge clk) begin
-    tdata_out     <= tdata_in;
-    tkeep_out     <= tkeep_in;
-    tvalid_out    <= tvalid_in;
-    tlast_out     <= tlast_in;
-    in_packet_out <= in_packet;
-    sop_out       <= sop_in;
+    if (tready_in) begin
+        tdata_out     <= tdata_in;
+        tkeep_out     <= tkeep_in;
+        tvalid_out    <= tvalid_in;
+        tlast_out     <= tlast_in;
+        in_packet_out <= in_packet;
+        sop_out       <= sop_in;
+    end
 end
 
 // IPV4 header parsing
@@ -57,33 +60,35 @@ always_ff @(posedge clk) begin
         wcnt_ipv4         <= '0;
     end
     else begin
-        wcnt_ipv4 <= '0;
-        if (tvalid_in && eth_parser_ready && !ipv4_parser_ready) begin
-            wcnt = 0;
-            done = 1'b0;
-            for (int i = 0; i < DATA_WIDTH/8; i++) begin
-                if (!done && tkeep_in[i] && i >= wcnt_eth) begin
-                    if ((counter + wcnt) == 0) begin
-                        ihl     <= tdata_in[i*8 +: 4];
-                        version <= tdata_in[i*8 + 4 +: 4];
-                    end
-                    else if ((counter + wcnt) == 9) protocol <= tdata_in[i*8 +: 8];
-                    else if (((counter + wcnt) > 11) && ((counter + wcnt) < 16)) src_ip[(15-(counter + wcnt))*8 +: 8] <= tdata_in[i*8 +: 8];
-                    else if (((counter + wcnt) < 20) && ((counter + wcnt) >= 16)) dst_ip[(19-(counter + wcnt))*8 +: 8] <= tdata_in[i*8 +: 8];
-                    wcnt++;
-                    if ((counter + wcnt) >= ipv4_header_length) begin
-                        ipv4_parser_ready <= 1'b1;
-                        wcnt_ipv4 <= wcnt;
-                        done = 1'b1;
-                        wcnt = 0;
+        if (tready_in) begin
+            wcnt_ipv4 <= '0;
+            if (tvalid_in && eth_parser_ready && !ipv4_parser_ready) begin
+                wcnt = 0;
+                done = 1'b0;
+                for (int i = 0; i < DATA_WIDTH/8; i++) begin
+                    if (!done && tkeep_in[i] && i >= wcnt_eth) begin
+                        if ((counter + wcnt) == 0) begin
+                            ihl     <= tdata_in[i*8 +: 4];
+                            version <= tdata_in[i*8 + 4 +: 4];
+                        end
+                        else if ((counter + wcnt) == 9) protocol <= tdata_in[i*8 +: 8];
+                        else if (((counter + wcnt) > 11) && ((counter + wcnt) < 16)) src_ip[(15-(counter + wcnt))*8 +: 8] <= tdata_in[i*8 +: 8];
+                        else if (((counter + wcnt) < 20) && ((counter + wcnt) >= 16)) dst_ip[(19-(counter + wcnt))*8 +: 8] <= tdata_in[i*8 +: 8];
+                        wcnt++;
+                        if ((counter + wcnt) >= ipv4_header_length) begin
+                            ipv4_parser_ready <= 1'b1;
+                            wcnt_ipv4 <= wcnt;
+                            done = 1'b1;
+                            wcnt = 0;
+                        end
                     end
                 end
+                if (done) counter <= '0;
+                else      counter <= counter + wcnt;
             end
-            if (done) counter <= '0;
-            else      counter <= counter + wcnt;
-        end
-        if (!eth_parser_ready) begin
-            ipv4_parser_ready <= 1'b0;
+            if (!eth_parser_ready) begin
+                ipv4_parser_ready <= 1'b0;
+            end
         end
     end
 end
