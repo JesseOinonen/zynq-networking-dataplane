@@ -13,6 +13,7 @@ module action_stage #(
     input  logic                    sop_in,   // Start of packet signal for modify action
     output logic                    wdone,    // AXI4-Lite write done
     output logic                    trap,
+    output logic                    drop_pulse, // 1-cycle pulse on SOP of a dropped packet
     // AXI stream signals
     input  logic [DATA_WIDTH-1:0]   tdata_in,
     input  logic                    tvalid_in,
@@ -22,7 +23,13 @@ module action_stage #(
     output logic [DATA_WIDTH-1:0]   tdata_out  = '0,
     output logic                    tvalid_out = 1'b0,
     output logic                    tlast_out  = 1'b0,
-    output logic [DATA_WIDTH/8-1:0] tkeep_out  = '0
+    output logic [DATA_WIDTH/8-1:0] tkeep_out  = '0,
+    // AXI stream signals for trap output to PS
+    output logic [DATA_WIDTH-1:0]   tdata_s2mm  = '0,
+    output logic                    tvalid_s2mm = 1'b0,
+    output logic                    tlast_s2mm  = 1'b0,
+    output logic [DATA_WIDTH/8-1:0] tkeep_s2mm  = '0,
+    input  logic                    tready_s2mm
 );
 
 logic [2:0] axi_w_counter;
@@ -107,11 +114,13 @@ end
 // Action Stage
 always_ff @(posedge clk) begin
     if (tready_in) begin
-        trap <= 1'b0;
+        trap       <= 1'b0;
+        drop_pulse <= 1'b0;
         if (flow_hit) begin
-        if (action_table[flow_id].valid && action_table[flow_id].flow_id == flow_id) begin
+            if (action_table[flow_id].valid && action_table[flow_id].flow_id == flow_id) begin
                 if (action_table[flow_id].drop) begin
                     tvalid_out <= 1'b0;
+                    if (sop_in) drop_pulse <= 1'b1; // pulse once per dropped packet
                 end
                 else if (action_table[flow_id].forward) begin
                     tdata_out  <= tdata_in;
@@ -156,12 +165,23 @@ always_ff @(posedge clk) begin
                         if (tlast_in) modify_done <= 1'b0; // Reset for next packet
                     end
                 end
-                // If trap bit is set, we can set trap signal here and let PS handle the trapped packet (e.g., send to CPU port and drop or forward)
-                // Do we want to send a copy to cpu and then drop the original or forward it through pipeline?
                 if (action_table[flow_id].trap) begin
-                    trap <= 1'b1;
+                    if (tready_s2mm) begin
+                        trap        <= 1'b1;
+                        tdata_s2mm  <= tdata_in;
+                        tvalid_s2mm <= tvalid_in;
+                        tkeep_s2mm  <= tkeep_in;
+                        tlast_s2mm  <= tlast_in;
+                    end
                 end
-        end
+                else begin
+                    trap        <= 1'b0;
+                    tdata_s2mm  <= '0;
+                    tvalid_s2mm <= 1'b0;
+                    tkeep_s2mm  <= '0;
+                    tlast_s2mm  <= 1'b0;
+                end
+            end
         end
         else begin
             tdata_out        <= tdata_in;

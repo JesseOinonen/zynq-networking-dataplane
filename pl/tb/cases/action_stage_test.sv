@@ -14,7 +14,7 @@ class action_stage_vseq extends dp_vseq_base;
         #10ns;
         axi4_write(`CSR_ACTION_CTRL, 32'h2);
 
-        #10us;
+        #1us;
 
         `uvm_info("ACTION_STAGE_TEST", "action_stage_testcase completed", UVM_LOW)
     endtask

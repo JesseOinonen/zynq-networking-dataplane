@@ -171,6 +171,7 @@ logic [DATA_WIDTH-1:0]   act_tdata_sig;
 logic [DATA_WIDTH/8-1:0] act_tkeep_sig;
 logic                    act_tlast_sig;
 logic                    trap_sig;
+logic                    drop_pulse_sig;
 
 // ---------------------------------------------------------------------------
 // TX path signals
@@ -197,16 +198,33 @@ logic [DATA_WIDTH/8-1:0] tkeep_mux;
 logic                    tlast_mux;
 logic                    tready_mux;
 
-// ---------------------------------------------------------------------------
-// Trap / S2MM — placeholder until AXI DMA IP is connected in Vivado
-// ---------------------------------------------------------------------------
-assign tdata_s2mm  = '0;
-assign tvalid_s2mm = 1'b0;
-assign tkeep_s2mm  = '0;
-assign tlast_s2mm  = 1'b0;
-
-// Observability
+// Observability signals
 logic [63:0] ts_sig;
+
+// sop_tx: first beat of a packet on the MAC TX output (after axi_tx register)
+logic        prev_tlast_tx;
+logic        sop_tx_sig;
+
+always_ff @(posedge clk) begin
+    if (rst) begin
+        prev_tlast_tx <= 1'b1;
+    end 
+    else if (tvalid_out && tready_mac) begin
+        prev_tlast_tx <= tlast_out;
+    end
+end
+assign sop_tx_sig = tvalid_out && tready_mac && prev_tlast_tx;
+
+// error_counter inputs derived in top
+logic rx_overflow_sig; // MAC tried to send but axi_rx FIFO was full
+logic flow_miss_sig;   // valid key looked up, no hit
+assign rx_overflow_sig = tvalid_in  && !tready_out;
+assign flow_miss_sig   = valid_flow_key_sig && !flow_hit_sig;
+
+// Observability outputs (wired to CSR)
+logic [31:0] latency_last_sig, latency_min_sig, latency_max_sig;
+logic [31:0] rx_bytes_sig, rx_packets_sig, tx_bytes_sig, tx_packets_sig;
+logic [31:0] rx_overflow_count_sig, flow_miss_count_sig, drop_count_sig;
 
 // ---------------------------------------------------------------------------
 // Module instantiations
@@ -294,6 +312,17 @@ csr u_csr (
     .tcp_dst_port(tcp_dst_port_sig),
     .flow_key(flow_key_sig),
     .flow_key_valid(valid_flow_key_sig),
+    .ts(ts_sig),
+    .latency_last(latency_last_sig),
+    .latency_min(latency_min_sig),
+    .latency_max(latency_max_sig),
+    .rx_bytes(rx_bytes_sig),
+    .rx_packets(rx_packets_sig),
+    .tx_bytes(tx_bytes_sig),
+    .tx_packets(tx_packets_sig),
+    .rx_overflow_count(rx_overflow_count_sig),
+    .flow_miss_count(flow_miss_count_sig),
+    .drop_count(drop_count_sig),
     .rdata(rdata_csr_sig),
     .rdone(rdone_csr_sig),
     .wdone(wdone_csr_sig),
@@ -479,7 +508,13 @@ action_stage #(.DATA_WIDTH(DATA_WIDTH)) u_action_stage (
     .tdata_out(act_tdata_sig),
     .tkeep_out(act_tkeep_sig),
     .tlast_out(act_tlast_sig),
-    .trap(trap_sig)
+    .trap(trap_sig),
+    .drop_pulse(drop_pulse_sig),
+    .tdata_s2mm(tdata_s2mm),
+    .tvalid_s2mm(tvalid_s2mm),
+    .tkeep_s2mm(tkeep_s2mm),
+    .tlast_s2mm(tlast_s2mm),
+    .tready_s2mm(tready_s2mm)
 );
 
 // TX MUX: arbitrates between PL dataplane (dp_*) and PS DMA MM2S.
@@ -524,6 +559,47 @@ timestamp u_timestamp (
     .clk(clk),
     .rst(rst),
     .ts(ts_sig)
+);
+
+latency_monitor u_latency_monitor (
+    .clk(clk),
+    .rst(rst),
+    .sop_rx(sop_sig),
+    .sop_tx(sop_tx_sig),
+    .stats_clear(stats_clear_csr),
+    .latency_last(latency_last_sig),
+    .latency_min(latency_min_sig),
+    .latency_max(latency_max_sig)
+);
+
+throughput_counter u_throughput_counter (
+    .clk(clk),
+    .rst(rst),
+    .rx_tvalid(rx_tvalid_sig),
+    .rx_tready(tready_tx),
+    .rx_tkeep(rx_tkeep_sig),
+    .rx_tlast(rx_tlast_sig),
+    .tx_tvalid(tvalid_out),
+    .tx_tready(tready_mac),
+    .tx_tkeep(tkeep_out),
+    .tx_tlast(tlast_out),
+    .stats_clear(stats_clear_csr),
+    .rx_bytes(rx_bytes_sig),
+    .rx_packets(rx_packets_sig),
+    .tx_bytes(tx_bytes_sig),
+    .tx_packets(tx_packets_sig)
+);
+
+error_counter u_error_counter (
+    .clk(clk),
+    .rst(rst),
+    .rx_overflow(rx_overflow_sig),
+    .flow_miss(flow_miss_sig),
+    .drop(drop_pulse_sig),
+    .stats_clear(stats_clear_csr),
+    .rx_overflow_count(rx_overflow_count_sig),
+    .flow_miss_count(flow_miss_count_sig),
+    .drop_count(drop_count_sig)
 );
 
 endmodule

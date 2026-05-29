@@ -1,0 +1,296 @@
+<mxfile host="65bd71144e">
+    <diagram id="ps_sw_stack_001" name="PS Linux Software Stack">
+        <mxGraphModel dx="1000" dy="500" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+
+                <!-- ==================== ZONE BACKGROUNDS ==================== -->
+
+                <mxCell id="10" value="ZYNQ-7000 — PS Linux Software Stack" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#333333;fontSize=14;fontStyle=1;verticalAlign=top;arcSize=2;" parent="1" vertex="1">
+                    <mxGeometry x="20" y="20" width="1600" height="1100" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="11" value="Linux Userspace  (ring 3)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;verticalAlign=top;arcSize=3;opacity=60;" parent="1" vertex="1">
+                    <mxGeometry x="30" y="45" width="1580" height="205" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="12" value="Linux Kernel  (ring 0)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=1;verticalAlign=top;arcSize=3;opacity=60;" parent="1" vertex="1">
+                    <mxGeometry x="30" y="270" width="1580" height="460" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="13" value="Hardware  (Vivado Block Design)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;verticalAlign=top;arcSize=3;opacity=60;" parent="1" vertex="1">
+                    <mxGeometry x="30" y="755" width="1580" height="350" as="geometry"/>
+                </mxCell>
+
+                <!-- Boundary labels -->
+                <mxCell id="14" value="─ ─ ─  syscall instruction  (ring 3 → ring 0)  ─ ─ ─" style="text;html=1;fontSize=10;fontColor=#888888;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="570" y="251" width="380" height="20" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="15" value="─ ─ ─  kernel / hardware boundary  ─ ─ ─" style="text;html=1;fontSize=10;fontColor=#888888;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="600" y="738" width="340" height="18" as="geometry"/>
+                </mxCell>
+
+                <!-- ==================== USERSPACE ==================== -->
+
+                <mxCell id="20" value="&lt;b&gt;Control Daemon&lt;/b&gt;&lt;br&gt;─────────────&lt;br&gt;add_flow()&lt;br&gt;del_flow()&lt;br&gt;get_stats()&lt;br&gt;set_enable()&lt;br&gt;flush_table()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="55" y="68" width="200" height="155" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="21" value="&lt;b&gt;libdataplane.so&lt;/b&gt;&lt;br&gt;──────────────────────────────&lt;br&gt;Control API&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;Data API&lt;br&gt;add_flow()&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;recv_packet()&lt;br&gt;del_flow()&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;send_packet()&lt;br&gt;get_stats()&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;poll / epoll&lt;br&gt;set_enable()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0a030;strokeColor=#d6b656;fontSize=11;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="370" y="58" width="390" height="175" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="22" value="&lt;b&gt;Packet Handler&lt;/b&gt;&lt;br&gt;─────────────&lt;br&gt;recv_trapped_packet()&lt;br&gt;inspect / process&lt;br&gt;send_packet()&lt;br&gt;(→ MM2S TX inject)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="870" y="68" width="220" height="155" as="geometry"/>
+                </mxCell>
+
+                <!-- ==================== KERNEL — CONTROL PATH ==================== -->
+
+                <mxCell id="30" value="&lt;b&gt;dataplane_ctrl.ko  —  Custom Platform Driver&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a8d5a8;strokeColor=#5a8a5a;fontSize=12;fontStyle=1;verticalAlign=top;arcSize=3;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="293" width="560" height="315" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="31" value="&lt;b&gt;probe()  +  ioremap&lt;/b&gt;&lt;br&gt;platform_get_resource()&lt;br&gt;devm_ioremap_resource()&lt;br&gt;virtual addr → PL registers" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e8;strokeColor=#5a8a5a;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="70" y="335" width="240" height="80" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="32" value="&lt;b&gt;/dev/dataplane&lt;/b&gt;&lt;br&gt;misc_device_register()&lt;br&gt;.ioctl  .read  .write  .mmap&lt;br&gt;.poll  (epoll / select)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e8;strokeColor=#5a8a5a;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="70" y="445" width="240" height="80" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="33" value="&lt;b&gt;IRQ handler&lt;/b&gt;&lt;br&gt;devm_request_irq()&lt;br&gt;irq_handler() → complete()&lt;br&gt;userspace poll() wakes up" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e8;strokeColor=#5a8a5a;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="330" y="335" width="260" height="80" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="34" value="&lt;b&gt;ioctl commands&lt;/b&gt;&lt;br&gt;DP_IOC_WRITE_FLOW  (flow table)&lt;br&gt;DP_IOC_SET_ACTION  (action table)&lt;br&gt;DP_IOC_GET_STATS   (CSR reads)&lt;br&gt;DP_IOC_SET_ENABLE  / SET_LOOPBACK" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e8;strokeColor=#5a8a5a;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="330" y="445" width="260" height="90" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="35" value='&lt;i&gt;Device Tree:&lt;/i&gt;  compatible = "mycompany,dataplane-1.0"  ·  reg = 0x43C00000, size 0x10000  ·  interrupts = 0 29 4' style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontSize=10;fontColor=#555555;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="628" width="560" height="40" as="geometry"/>
+                </mxCell>
+
+                <!-- ==================== KERNEL — DMA PATH ==================== -->
+
+                <mxCell id="40" value="&lt;b&gt;xilinx_dma.ko  —  AXI DMA Driver (Linux mainline)&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a8d5a8;strokeColor=#5a8a5a;fontSize=12;fontStyle=1;verticalAlign=top;arcSize=3;" parent="1" vertex="1">
+                    <mxGeometry x="648" y="293" width="930" height="315" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="41" value="&lt;b&gt;S2MM Channel&lt;/b&gt;&lt;br&gt;PL → DDR → Linux&lt;br&gt;──────────────&lt;br&gt;Trapped packet RX&lt;br&gt;dma_request_chan()&lt;br&gt;Cyclic descriptor mode" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e8;strokeColor=#5a8a5a;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="668" y="335" width="260" height="120" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="42" value="&lt;b&gt;MM2S Channel&lt;/b&gt;&lt;br&gt;Linux → DDR → PL&lt;br&gt;──────────────&lt;br&gt;TX packet injection&lt;br&gt;dmaengine_submit()&lt;br&gt;dma_async_issue_pending()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e8;strokeColor=#5a8a5a;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="960" y="335" width="260" height="120" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="43" value="Linux dmaengine API:  dmaengine_prep_slave_single()  ·  dma_async_issue_pending()  ·  completion callback → IRQ" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0f0d0;strokeColor=#5a8a5a;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="668" y="470" width="552" height="38" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="44" value="&lt;b&gt;DMA Coherent Ring Buffers&lt;/b&gt;  —  dma_alloc_coherent()&lt;br&gt;Physically contiguous memory visible to both CPU and AXI DMA IP  ·  No cache flush needed&lt;br&gt;S2MM: 8 × 2 KB descriptors   |   MM2S: 8 × 2 KB descriptors" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#cce5ff;strokeColor=#6c8ebf;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="668" y="523" width="552" height="60" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="45" value='&lt;i&gt;Device Tree:&lt;/i&gt;  compatible = "xlnx,axi-dma-1.00.a"  ·  reg = 0x40400000, size 0x10000  ·  interrupts = 0 30 4, 0 31 4  (S2MM, MM2S)' style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontSize=10;fontColor=#555555;" parent="1" vertex="1">
+                    <mxGeometry x="648" y="628" width="930" height="40" as="geometry"/>
+                </mxCell>
+
+                <!-- ==================== HARDWARE ==================== -->
+
+                <mxCell id="50" value="&lt;b&gt;Zynq PS7  (Cortex-A9 · 650 MHz)&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#bcd4f0;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;verticalAlign=top;arcSize=3;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="775" width="310" height="310" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="51" value="M_AXI_GP0&lt;br&gt;&lt;i&gt;AXI Master  (config writes)&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="70" y="820" width="200" height="48" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="52" value="S_AXI_HP0&lt;br&gt;&lt;i&gt;High-Perf Slave  (DMA data)&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="70" y="888" width="200" height="48" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="53" value="IRQ_F2P[1:0]&lt;br&gt;&lt;i&gt;PL-to-PS interrupt input&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="70" y="956" width="200" height="48" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="54" value="DDR Controller&lt;br&gt;&lt;i&gt;→ 512 MB DDR3L&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="70" y="1024" width="200" height="42" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="55" value="AXI Interconnect&lt;br&gt;(Vivado IP)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="430" y="808" width="175" height="55" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="61" value="&lt;b&gt;dataplane_top&lt;/b&gt;&lt;br&gt;AXI4-Lite Slave&lt;br&gt;0x43C00000" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="440" y="928" width="170" height="75" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="60" value="&lt;b&gt;AXI DMA IP  (Xilinx)&lt;/b&gt;&lt;br&gt;0x40400000&lt;br&gt;──────────────&lt;br&gt;S2MM  (stream → memory)&lt;br&gt;MM2S  (memory → stream)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;verticalAlign=top;" parent="1" vertex="1">
+                    <mxGeometry x="730" y="790" width="280" height="145" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="62" value="&lt;b&gt;DDR3L  512 MB&lt;/b&gt;&lt;br&gt;──────────────&lt;br&gt;S2MM ring buffers&lt;br&gt;MM2S ring buffers" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e0e0e0;strokeColor=#666666;fontSize=11;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1100" y="808" width="220" height="110" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="63" value="&lt;b&gt;dataplane_top&lt;/b&gt;&lt;br&gt;S2MM / MM2S stream ports&lt;br&gt;&lt;i&gt;(action_stage trap → S2MM)&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="730" y="975" width="280" height="75" as="geometry"/>
+                </mxCell>
+
+                <!-- ==================== EDGES ==================== -->
+
+                <!-- Userspace internal -->
+                <mxCell id="200" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#d6b656;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="20" target="21" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="201" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#d6b656;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="22" target="21" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+
+                <!-- libdataplane → misc_device: ioctl() syscall (crosses boundary) -->
+                <mxCell id="202" value="ioctl() syscall" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;strokeColor=#0055CC;fontColor=#0055CC;fontSize=9;fontStyle=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;" parent="1" source="21" target="32" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="200" y="190"/>
+                            <mxPoint x="200" y="445"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+
+                <!-- libdataplane → DMA ring buffers: read/write/mmap syscall (crosses boundary) -->
+                <mxCell id="203" value="read() / write()&lt;br&gt;mmap() syscall" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;strokeColor=#0055CC;fontColor=#0055CC;fontSize=9;fontStyle=1;exitX=1;exitY=0.75;exitDx=0;exitDy=0;" parent="1" source="21" target="44" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="944" y="190"/>
+                            <mxPoint x="944" y="523"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+
+                <!-- probe/ioremap → GP0: register access (crosses kernel/hw boundary) -->
+                <mxCell id="210" value="virtual → physical&lt;br&gt;register r/w" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;strokeColor=#FF8800;fontColor=#FF8800;fontSize=9;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" source="31" target="51" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="190" y="745"/>
+                            <mxPoint x="170" y="745"/>
+                            <mxPoint x="170" y="880"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+
+                <!-- GP0 → AXI Interconnect -->
+                <mxCell id="211" value="M_AXI_GP0" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#6c8ebf;fontSize=9;fontStyle=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="51" target="55" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+
+                <!-- AXI IC → dataplane_top -->
+                <mxCell id="212" value="AXI4-Lite" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#6c8ebf;fontSize=9;fontStyle=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="55" target="61" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+
+                <!-- AXI IC → AXI DMA IP (AXI-Lite config) -->
+                <mxCell id="213" value="AXI4-Lite&lt;br&gt;(DMA config)" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#6c8ebf;fontSize=9;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="55" target="60" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="660" y="835"/>
+                            <mxPoint x="730" y="835"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+
+                <!-- HP0 ↔ AXI DMA (DMA data, high bandwidth) -->
+                <mxCell id="214" value="S_AXI_HP0  DMA data" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#336600;fontSize=9;fontStyle=1;strokeWidth=2;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.75;entryDx=0;entryDy=0;" parent="1" source="52" target="60" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="660" y="912"/>
+                            <mxPoint x="730" y="912"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+
+                <!-- AXI DMA → DDR -->
+                <mxCell id="215" value="DMA read/write" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#336600;fontSize=9;strokeWidth=2;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="60" target="62" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1050" y="863"/>
+                            <mxPoint x="1100" y="863"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+
+                <!-- AXI DMA ↔ dataplane_top stream ports -->
+                <mxCell id="216" value="AXI-Stream&lt;br&gt;S2MM ← / MM2S →" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#b85450;fontSize=9;fontStyle=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="60" target="63" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+
+                <!-- Ring buffers → AXI DMA driver (driver programs descriptors, crosses kernel/hw boundary) -->
+                <mxCell id="217" value="DMA descriptor&lt;br&gt;programming" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#336600;fontSize=9;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="44" target="60" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="944" y="700"/>
+                            <mxPoint x="870" y="700"/>
+                            <mxPoint x="870" y="790"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+
+                <!-- IRQ: AXI DMA → IRQ_F2P (crosses hw/kernel boundary) -->
+                <mxCell id="220" value="DMA complete IRQ" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;strokeColor=#CC0000;fontColor=#CC0000;fontSize=9;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="60" target="53" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="650" y="1000"/>
+                            <mxPoint x="270" y="1000"/>
+                            <mxPoint x="270" y="980"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+
+                <!-- IRQ: IRQ_F2P → kernel IRQ handler (crosses hw/kernel boundary) -->
+                <mxCell id="221" value="IRQ_F2P" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;strokeColor=#CC0000;fontColor=#CC0000;fontSize=9;fontStyle=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" source="53" target="33" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="170" y="745"/>
+                            <mxPoint x="460" y="745"/>
+                            <mxPoint x="460" y="415"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+
+                <!-- ==================== LEGEND ==================== -->
+
+                <mxCell id="300" value="&lt;b&gt;Legend&lt;/b&gt;" style="text;html=1;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="1360" y="800" width="80" height="20" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="301" value="─ ─  ioctl / syscall (user → kernel)" style="text;html=1;fontSize=10;fontColor=#0055CC;" parent="1" vertex="1">
+                    <mxGeometry x="1340" y="826" width="250" height="18" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="302" value="─ ─  IRQ path (HW → kernel → user)" style="text;html=1;fontSize=10;fontColor=#CC0000;" parent="1" vertex="1">
+                    <mxGeometry x="1340" y="848" width="250" height="18" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="303" value="───  DMA data path (high bandwidth)" style="text;html=1;fontSize=10;fontColor=#336600;" parent="1" vertex="1">
+                    <mxGeometry x="1340" y="870" width="250" height="18" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="304" value="───  AXI bus (config / control)" style="text;html=1;fontSize=10;fontColor=#6c8ebf;" parent="1" vertex="1">
+                    <mxGeometry x="1340" y="892" width="250" height="18" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="305" value="─ ─  register access (ioremap)" style="text;html=1;fontSize=10;fontColor=#FF8800;" parent="1" vertex="1">
+                    <mxGeometry x="1340" y="914" width="250" height="18" as="geometry"/>
+                </mxCell>
+
+                <mxCell id="306" value="─ ─  DMA descriptor programming" style="text;html=1;fontSize=10;fontColor=#336600;" parent="1" vertex="1">
+                    <mxGeometry x="1340" y="936" width="250" height="18" as="geometry"/>
+                </mxCell>
+
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
